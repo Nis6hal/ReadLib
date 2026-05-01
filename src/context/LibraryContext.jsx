@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAllBooks, saveBook, deleteBook as deleteBookDB, getSetting, setSetting, verifyPermission } from '../services/db';
 import { generateThumbnail } from '../services/thumbnail';
+import { extractPdfMetadata } from '../services/metadata';
 
 const LibraryContext = createContext();
 
@@ -87,7 +88,8 @@ export function LibraryProvider({ children }) {
             progress: 0,
             lastRead: null,
             addedAt: new Date().toISOString(),
-            cover: null, // Will be populated async
+            cover: null,
+            pageCount: 0,
           };
           await saveBook(newBook);
           newBooks.push(newBook);
@@ -96,24 +98,56 @@ export function LibraryProvider({ children }) {
     }
     setBooks(newBooks);
 
-    // Generate thumbnails in background (don't block the scan)
-    generateCovers(newBooks);
+    // Enrich books with metadata + thumbnails in background
+    enrichBooks(newBooks);
   };
 
-  // Generate cover thumbnails for books that don't have one
-  const generateCovers = async (bookList) => {
+  // Extract metadata and generate covers for books that need it
+  const enrichBooks = async (bookList) => {
     for (const book of bookList) {
+      let needsUpdate = false;
+      let updatedBook = { ...book };
+
+      // Extract metadata if author is still unknown or no page count
+      if ((book.author === 'Unknown Author' || !book.pageCount) && book.fileHandle) {
+        try {
+          const meta = await extractPdfMetadata(book.fileHandle);
+          
+          // Use extracted title only if current title looks like a filename
+          if (meta.title && book.title === book.id.replace('.pdf', '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim()) {
+            updatedBook.title = meta.title;
+          }
+
+          if (meta.author) {
+            updatedBook.author = meta.author;
+          }
+
+          if (meta.pageCount) {
+            updatedBook.pageCount = meta.pageCount;
+          }
+
+          needsUpdate = true;
+        } catch {
+          // Skip failed metadata extraction silently
+        }
+      }
+
+      // Generate cover thumbnail if missing
       if (!book.cover && book.fileHandle) {
         try {
           const cover = await generateThumbnail(book.fileHandle);
           if (cover) {
-            const updatedBook = { ...book, cover };
-            await saveBook(updatedBook);
-            setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+            updatedBook.cover = cover;
+            needsUpdate = true;
           }
         } catch {
           // Skip failed thumbnails silently
         }
+      }
+
+      if (needsUpdate) {
+        await saveBook(updatedBook);
+        setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
       }
     }
   };
