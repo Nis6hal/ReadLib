@@ -1,0 +1,12 @@
+.continue-reading-page {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.continue-reading-page .page-header {
+  margin-bottom: 1.75rem;
+}
+
+.continue-reading-page .books-grid {
+  gap: 1.25rem;
+}

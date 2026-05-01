@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <defs>
+    <linearGradient id="g1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366f1"/>
+      <stop offset="100%" style="stop-color:#8b5cf6"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="8" fill="#0a0e1a"/>
+  <g transform="translate(6, 7)">
+    <!-- Book spine -->
+    <rect x="9" y="1" width="2" height="17" rx="1" fill="url(#g1)" opacity="0.5"/>
+    <!-- Left page -->
+    <path d="M9 2C9 2 7 1 5 1C3 1 1 2 1 2V16C1 16 3 15 5 15C7 15 9 16 9 16V2Z" fill="url(#g1)" opacity="0.85"/>
+    <!-- Right page -->
+    <path d="M11 2C11 2 13 1 15 1C17 1 19 2 19 2V16C19 16 17 15 15 15C13 15 11 16 11 16V2Z" fill="url(#g1)"/>
+    <!-- Page lines left -->
+    <line x1="3" y1="5" x2="7.5" y2="4.5" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="3" y1="7.5" x2="7.5" y2="7" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="3" y1="10" x2="7.5" y2="9.5" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+    <!-- Page lines right -->
+    <line x1="12.5" y1="4.5" x2="17" y2="5" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="12.5" y1="7" x2="17" y2="7.5" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="12.5" y1="9.5" x2="17" y2="10" stroke="rgba(255,255,255,0.3)" stroke-width="0.7" stroke-linecap="round"/>
+  </g>
+</svg>

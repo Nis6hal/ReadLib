@@ -1,0 +1,220 @@
+.settings-page {
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+.settings-section {
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.settings-section:hover {
+  transform: none;
+}
+
+.settings-section-header {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  align-items: flex-start;
+}
+
+.settings-icon-wrap {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-icon-wrap.folder {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--accent-primary);
+}
+
+.settings-icon-wrap.theme {
+  background: rgba(139, 92, 246, 0.1);
+  color: #8b5cf6;
+}
+
+.settings-icon-wrap.data {
+  background: rgba(245, 158, 11, 0.1);
+  color: var(--warning);
+}
+
+.settings-icon-wrap.about {
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--success);
+}
+
+.settings-section-title {
+  font-size: 1.05rem;
+  margin-bottom: 0.25rem;
+}
+
+.settings-desc {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+
+.settings-folder-info {
+  margin-bottom: 1rem;
+}
+
+.folder-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.folder-badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--success);
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.folder-badge-status {
+  font-size: 0.78rem;
+  color: var(--success);
+  font-weight: 500;
+}
+
+.no-folder {
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-style: italic;
+  opacity: 0.7;
+}
+
+.settings-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.spin-icon {
+  animation: spin 0.8s linear infinite;
+}
+
+/* Theme toggle */
+.theme-toggle-container {
+  margin-top: 0.25rem;
+}
+
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 1rem;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.88rem;
+  transition: border-color 0.2s ease;
+}
+
+.theme-toggle-btn:hover {
+  border-color: var(--glass-border-hover);
+}
+
+.theme-toggle-track {
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--accent-primary);
+  position: relative;
+  transition: background 0.3s ease;
+  flex-shrink: 0;
+}
+
+.theme-toggle-track.light {
+  background: var(--warning);
+}
+
+.theme-toggle-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: white;
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--accent-primary);
+}
+
+.theme-toggle-track.light .theme-toggle-thumb {
+  transform: translateX(20px);
+  color: var(--warning);
+}
+
+.theme-toggle-label {
+  font-weight: 500;
+}
+
+/* Danger button */
+.btn-danger {
+  background: rgba(239, 68, 68, 0.08);
+  color: var(--danger);
+  border: 1px solid rgba(239, 68, 68, 0.15);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
+/* Data stats */
+.settings-data-info {
+  margin-bottom: 1rem;
+}
+
+.data-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.data-stat-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+  font-family: 'Outfit', sans-serif;
+}
+
+.data-stat-label {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
