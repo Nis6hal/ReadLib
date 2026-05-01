@@ -21,7 +21,7 @@ function getBookGradient(title) {
     ['#06b6d4', '#10b981'],
     ['#dc2626', '#f97316'],
   ];
-  
+
   let hash = 0;
   for (let i = 0; i < title.length; i++) {
     hash = title.charCodeAt(i) + ((hash << 5) - hash);
@@ -127,7 +127,7 @@ function BookCard({ book, viewMode = 'grid' }) {
   if (viewMode === 'list') {
     return (
       <div className="book-list-item card">
-        <div 
+        <div
           className={`book-list-cover ${hasCover ? 'has-cover' : ''}`}
           style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
           onClick={handleRead}
@@ -188,16 +188,16 @@ function BookCard({ book, viewMode = 'grid' }) {
   // === GRID VIEW (default) ===
   return (
     <div className="card book-card">
-      <div 
+      <div
         className={`book-cover ${hasCover ? 'has-cover' : ''}`}
         style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
         onClick={handleRead}
       >
         {hasCover ? (
-          <img 
-            src={book.cover} 
-            alt={book.title} 
-            className="book-cover-img" 
+          <img
+            src={book.cover}
+            alt={book.title}
+            className="book-cover-img"
             loading="lazy"
           />
         ) : (
@@ -209,23 +209,23 @@ function BookCard({ book, viewMode = 'grid' }) {
           <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
         </div>
       </div>
-      
+
       <div className="book-info">
         {isEditing ? (
           <div className="inline-edit">
-            <input 
+            <input
               ref={editTitleRef}
-              value={editTitle} 
-              onChange={e => setEditTitle(e.target.value)} 
+              value={editTitle}
+              onChange={e => setEditTitle(e.target.value)}
               onKeyDown={handleEditKeyDown}
-              className="edit-input edit-title-input" 
+              className="edit-input edit-title-input"
               placeholder="Title"
             />
-            <input 
-              value={editAuthor} 
-              onChange={e => setEditAuthor(e.target.value)} 
+            <input
+              value={editAuthor}
+              onChange={e => setEditAuthor(e.target.value)}
               onKeyDown={handleEditKeyDown}
-              className="edit-input edit-author-input" 
+              className="edit-input edit-author-input"
               placeholder="Author"
             />
             <div className="edit-actions">
@@ -239,16 +239,16 @@ function BookCard({ book, viewMode = 'grid' }) {
             <p className="book-author">{book.author}</p>
           </>
         )}
-        
+
         <div className="progress-container">
           <div className="progress-header">
             <span>Progress</span>
             <span className="progress-value">{Math.round(progressPercent)}%</span>
           </div>
           <div className="progress-bg">
-            <div 
-              className="progress-fill" 
-              style={{ 
+            <div
+              className="progress-fill"
+              style={{
                 width: `${progressPercent}%`,
                 background: `linear-gradient(90deg, ${color1}, ${color2})`
               }}
@@ -260,21 +260,21 @@ function BookCard({ book, viewMode = 'grid' }) {
           <button className="btn btn-primary flex-1" onClick={handleRead}>
             <Play size={14} fill="currentColor" /> Read
           </button>
-          
+
           <div className="dropdown" ref={menuRef}>
-            <button 
-              className="btn-icon-sm" 
+            <button
+              className="btn-icon-sm"
               onClick={() => setShowMenu(!showMenu)}
               title="More options"
             >
               {showMenu ? <X size={16} /> : <Plus size={16} />}
             </button>
-            
+
             {showMenu && (
               <div className="dropdown-menu glass-panel">
                 <div className="dropdown-header">Move to...</div>
                 {['Planned', 'Reading', 'Completed'].map(cat => (
-                  <button 
+                  <button
                     key={cat}
                     className={`dropdown-item ${book.category === cat ? 'active' : ''}`}
                     onClick={() => changeCategory(cat)}
