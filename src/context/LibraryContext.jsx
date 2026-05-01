@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAllBooks, saveBook, deleteBook as deleteBookDB, getSetting, setSetting, verifyPermission } from '../services/db';
+import { generateThumbnail } from '../services/thumbnail';
 
 const LibraryContext = createContext();
 
@@ -49,7 +50,6 @@ export function LibraryProvider({ children }) {
       setDirHandle(handle);
       await scanDirectory(handle);
     } catch (err) {
-      // User cancelled the picker - not an error
       if (err.name !== 'AbortError') {
         console.error("Error selecting directory", err);
       }
@@ -72,14 +72,14 @@ export function LibraryProvider({ children }) {
     // Scan for PDFs (shallow)
     for await (const entry of handle.values()) {
       if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
-        const id = entry.name; // Using filename as simple ID
+        const id = entry.name;
         if (!existingIds.has(id)) {
           const newBook = {
             id,
             title: entry.name
               .replace('.pdf', '')
-              .replace(/[-_]/g, ' ')      // Replace dashes/underscores with spaces
-              .replace(/\s+/g, ' ')         // Collapse multiple spaces
+              .replace(/[-_]/g, ' ')
+              .replace(/\s+/g, ' ')
               .trim(),
             author: 'Unknown Author',
             fileHandle: entry,
@@ -87,6 +87,7 @@ export function LibraryProvider({ children }) {
             progress: 0,
             lastRead: null,
             addedAt: new Date().toISOString(),
+            cover: null, // Will be populated async
           };
           await saveBook(newBook);
           newBooks.push(newBook);
@@ -94,6 +95,27 @@ export function LibraryProvider({ children }) {
       }
     }
     setBooks(newBooks);
+
+    // Generate thumbnails in background (don't block the scan)
+    generateCovers(newBooks);
+  };
+
+  // Generate cover thumbnails for books that don't have one
+  const generateCovers = async (bookList) => {
+    for (const book of bookList) {
+      if (!book.cover && book.fileHandle) {
+        try {
+          const cover = await generateThumbnail(book.fileHandle);
+          if (cover) {
+            const updatedBook = { ...book, cover };
+            await saveBook(updatedBook);
+            setBooks(prev => prev.map(b => b.id === updatedBook.id ? updatedBook : b));
+          }
+        } catch {
+          // Skip failed thumbnails silently
+        }
+      }
+    }
   };
 
   const updateBook = async (updatedBook) => {

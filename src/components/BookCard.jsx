@@ -4,7 +4,7 @@ import { Play, Check, BookOpen, Plus, X } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import './BookCard.css';
 
-// Generate a unique gradient based on book title
+// Generate a unique gradient based on book title (fallback)
 function getBookGradient(title) {
   const gradients = [
     ['#6366f1', '#8b5cf6'],
@@ -70,17 +70,27 @@ function BookCard({ book }) {
   const progressPercent = book.progress || 0;
   const [color1, color2] = getBookGradient(book.title);
   const initials = getInitials(book.title);
+  const hasCover = !!book.cover;
 
   return (
     <div className="card book-card">
       <div 
-        className="book-cover" 
-        style={{ background: `linear-gradient(145deg, ${color1}22, ${color2}11)` }}
+        className={`book-cover ${hasCover ? 'has-cover' : ''}`}
+        style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
         onClick={handleRead}
       >
-        <div className="book-cover-art" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
-          <span className="book-initials">{initials || '?'}</span>
-        </div>
+        {hasCover ? (
+          <img 
+            src={book.cover} 
+            alt={book.title} 
+            className="book-cover-img" 
+            loading="lazy"
+          />
+        ) : (
+          <div className="book-cover-art" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+            <span className="book-initials">{initials || '?'}</span>
+          </div>
+        )}
         <div className="category-badge">
           <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
         </div>
