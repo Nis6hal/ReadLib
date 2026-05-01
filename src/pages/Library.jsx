@@ -1,20 +1,34 @@
 import React, { useState, useMemo } from 'react';
-import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, SlidersHorizontal } from 'lucide-react';
+import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
+import { useToast } from '../components/Toast';
 import BookCard from '../components/BookCard';
 import '../App.css';
 import './Library.css';
 
+const SORT_OPTIONS = [
+  { value: 'title-asc', label: 'Title A→Z' },
+  { value: 'title-desc', label: 'Title Z→A' },
+  { value: 'added-desc', label: 'Recently Added' },
+  { value: 'added-asc', label: 'Oldest First' },
+  { value: 'progress-desc', label: 'Most Progress' },
+  { value: 'progress-asc', label: 'Least Progress' },
+  { value: 'lastread-desc', label: 'Last Read' },
+];
+
 function Library() {
   const { books, loading, selectDirectory, scanDirectory, dirHandle } = useLibrary();
+  const { addToast } = useToast();
   const [activeFilter, setActiveFilter] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isScanning, setIsScanning] = useState(false);
+  const [sortBy, setSortBy] = useState('added-desc');
+  const [viewMode, setViewMode] = useState('grid');
 
   const filters = ['All', 'Planned', 'Reading', 'Completed'];
 
   const filteredBooks = useMemo(() => {
-    let result = books;
+    let result = [...books];
 
     // Filter by category
     if (activeFilter !== 'All') {
@@ -31,14 +45,38 @@ function Library() {
       );
     }
 
+    // Sort
+    const [field, direction] = sortBy.split('-');
+    result.sort((a, b) => {
+      let cmp = 0;
+      switch (field) {
+        case 'title':
+          cmp = a.title.localeCompare(b.title);
+          break;
+        case 'added':
+          cmp = (a.addedAt || '').localeCompare(b.addedAt || '');
+          break;
+        case 'progress':
+          cmp = (a.progress || 0) - (b.progress || 0);
+          break;
+        case 'lastread':
+          cmp = (a.lastRead || '').localeCompare(b.lastRead || '');
+          break;
+        default:
+          cmp = 0;
+      }
+      return direction === 'desc' ? -cmp : cmp;
+    });
+
     return result;
-  }, [books, activeFilter, searchQuery]);
+  }, [books, activeFilter, searchQuery, sortBy]);
 
   const handleRescan = async () => {
     if (dirHandle && !isScanning) {
       setIsScanning(true);
       try {
         await scanDirectory(dirHandle);
+        addToast('Library rescanned successfully', 'success');
       } finally {
         setIsScanning(false);
       }
@@ -88,16 +126,55 @@ function Library() {
 
       {books.length > 0 && (
         <>
-          {/* Search */}
-          <div className="search-bar fade-in fade-in-delay-1">
-            <Search size={16} className="search-icon" />
-            <input
-              type="text"
-              placeholder="Search by title or author..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              id="library-search"
-            />
+          {/* Search + View Controls */}
+          <div className="library-controls fade-in fade-in-delay-1">
+            <div className="search-bar">
+              <Search size={16} className="search-icon" />
+              <input
+                type="text"
+                placeholder="Search by title or author..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                id="library-search"
+              />
+            </div>
+
+            <div className="library-view-controls">
+              {/* Sort */}
+              <div className="sort-select-wrapper">
+                <ArrowUpDown size={14} className="sort-icon" />
+                <select 
+                  value={sortBy} 
+                  onChange={e => setSortBy(e.target.value)}
+                  className="sort-select"
+                  id="library-sort"
+                >
+                  {SORT_OPTIONS.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Grid/List Toggle */}
+              <div className="view-toggle">
+                <button 
+                  className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
+                  onClick={() => setViewMode('grid')}
+                  title="Grid view"
+                  id="view-grid"
+                >
+                  <LayoutGrid size={16} />
+                </button>
+                <button 
+                  className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
+                  onClick={() => setViewMode('list')}
+                  title="List view"
+                  id="view-list"
+                >
+                  <List size={16} />
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Category Filters */}
@@ -117,13 +194,21 @@ function Library() {
         </>
       )}
 
-      {/* Books Grid */}
+      {/* Books Grid or List */}
       {filteredBooks.length > 0 ? (
-        <div className="books-grid fade-in fade-in-delay-2">
-          {filteredBooks.map(book => (
-            <BookCard key={book.id} book={book} />
-          ))}
-        </div>
+        viewMode === 'grid' ? (
+          <div className="books-grid fade-in fade-in-delay-2">
+            {filteredBooks.map(book => (
+              <BookCard key={book.id} book={book} viewMode="grid" />
+            ))}
+          </div>
+        ) : (
+          <div className="books-list fade-in fade-in-delay-2">
+            {filteredBooks.map(book => (
+              <BookCard key={book.id} book={book} viewMode="list" />
+            ))}
+          </div>
+        )
       ) : (
         <div className="empty-state card fade-in fade-in-delay-2">
           <div className="empty-state-icon">

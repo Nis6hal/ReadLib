@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, FolderOpen, Sun, Moon, Trash2, RefreshCw, Info, Database, Palette, HardDrive } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
+import { useToast } from '../components/Toast';
 import '../App.css';
 import './Settings.css';
 
 function Settings() {
   const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books } = useLibrary();
+  const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
   const handleRescan = async () => {
@@ -13,6 +15,7 @@ function Settings() {
       setIsScanning(true);
       try {
         await scanDirectory(dirHandle);
+        addToast('Library rescanned successfully', 'success');
       } finally {
         setIsScanning(false);
       }
@@ -133,7 +136,7 @@ function Settings() {
           <div>
             <h3 className="settings-section-title">About</h3>
             <p className="settings-desc">
-              ReadLib v1.0.0 — A modern book and PDF management app.
+              ReadLib v1.1.0 — A modern book and PDF management app.
             </p>
             <p className="settings-desc" style={{ marginBottom: 0 }}>
               Built with React, PDF.js, and the File System Access API.
