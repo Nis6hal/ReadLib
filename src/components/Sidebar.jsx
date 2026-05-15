@@ -8,9 +8,6 @@ function Sidebar() {
     { to: '/', icon: <Home size={22} />, label: 'Home', end: true },
     { to: '/library', icon: <Library size={22} />, label: 'Library' },
     { to: '/reading', icon: <BookOpen size={22} />, label: 'Reading' },
-    { to: '/downloads', icon: <Download size={22} />, label: 'Downloads' },
-    { to: '/messages', icon: <Mail size={22} />, label: 'Messages' },
-    { to: '/contact', icon: <Phone size={22} />, label: 'Contact' },
     { to: '/settings', icon: <Settings size={22} />, label: 'Settings' }
   ];
 

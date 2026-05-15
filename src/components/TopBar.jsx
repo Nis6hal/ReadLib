@@ -1,8 +1,17 @@
 import { Search, Bell, Mail } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
+import { useLibrary } from '../context/LibraryContext';
 import './TopBar.css';
 
 function TopBar() {
+  const { userName } = useLibrary();
+  
+  const initials = userName
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase();
+
   return (
     <div className="top-bar">
       <nav className="top-nav">
@@ -20,8 +29,8 @@ function TopBar() {
         <button className="icon-btn"><Bell size={20} /></button>
         <button className="icon-btn"><Mail size={20} /></button>
         <div className="user-profile">
-          <span className="user-name">Abhishek Saha</span>
-          <img src="https://ui-avatars.com/api/?name=Abhishek+Saha&background=fbc02d&color=1e2f2f" alt="Profile" className="user-avatar" />
+          <span className="user-name">{userName}</span>
+          <div className="user-avatar-initials">{initials}</div>
         </div>
       </div>
     </div>

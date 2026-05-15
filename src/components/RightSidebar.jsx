@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import './RightSidebar.css';
 
 const POPULAR_BOOKS = [
@@ -15,12 +16,14 @@ const AUTHORS = [
 ];
 
 function RightSidebar() {
+  const navigate = useNavigate();
+  
   return (
     <aside className="right-sidebar">
       <section className="sidebar-section">
         <div className="section-header">
           <h3>Popular books</h3>
-          <button className="show-all">Show all</button>
+          <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
         </div>
         <div className="mini-book-list">
           {POPULAR_BOOKS.map(book => (
@@ -38,7 +41,7 @@ function RightSidebar() {
       <section className="sidebar-section">
         <div className="section-header">
           <h3>Writers and Authors</h3>
-          <button className="show-all">Show all</button>
+          <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
         </div>
         <div className="author-list">
           {AUTHORS.map(author => (
@@ -57,7 +60,7 @@ function RightSidebar() {
       <section className="sidebar-section">
         <div className="section-header">
           <h3>Special books</h3>
-          <button className="show-all">Show all</button>
+          <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
         </div>
         <div className="special-empty">No special items yet.</div>
       </section>

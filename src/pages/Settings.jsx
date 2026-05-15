@@ -6,7 +6,7 @@ import '../App.css';
 import './Settings.css';
 
 function Settings() {
-  const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books } = useLibrary();
+  const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books, userName, updateUserName } = useLibrary();
   const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
@@ -35,6 +35,29 @@ function Settings() {
       <div className="page-header fade-in">
         <h1>Settings</h1>
         <p className="page-subtitle">Manage your library and preferences</p>
+      </div>
+
+      {/* User Profile */}
+      <div className="card settings-section fade-in fade-in-delay-1">
+        <div className="settings-section-header">
+          <div className="settings-icon-wrap user">
+            <SettingsIcon size={18} />
+          </div>
+          <div>
+            <h3 className="settings-section-title">User Profile</h3>
+            <p className="settings-desc">Update your display name.</p>
+          </div>
+        </div>
+        <div className="settings-input-group">
+          <input
+            type="text"
+            className="input"
+            value={userName}
+            onChange={(e) => updateUserName(e.target.value)}
+            placeholder="Your name"
+            id="user-name-input"
+          />
+        </div>
       </div>
 
       {/* Library Folder */}

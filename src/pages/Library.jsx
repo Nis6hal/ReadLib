@@ -5,6 +5,7 @@ import { useToast } from '../components/Toast';
 import BookCard from '../components/BookCard';
 import '../App.css';
 import './Library.css';
+import { useSearchParams } from 'react-router-dom';
 
 const SORT_OPTIONS = [
   { value: 'title-asc', label: 'Title A→Z' },
@@ -19,20 +20,23 @@ const SORT_OPTIONS = [
 function Library() {
   const { books, loading, selectDirectory, scanDirectory, dirHandle } = useLibrary();
   const { addToast } = useToast();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilter = searchParams.get('genre') || 'All';
+  
+  const [activeFilter, setActiveFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [sortBy, setSortBy] = useState('added-desc');
   const [viewMode, setViewMode] = useState('grid');
 
-  const filters = ['All', 'Planned', 'Reading', 'Completed'];
+  const filters = ['All', 'Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
 
   const filteredBooks = useMemo(() => {
     let result = [...books];
 
-    // Filter by category
+    // Filter by genre/category
     if (activeFilter !== 'All') {
-      result = result.filter(b => b.category === activeFilter);
+      result = result.filter(b => b.genre === activeFilter);
     }
 
     // Filter by search
@@ -44,6 +48,7 @@ function Library() {
           b.author.toLowerCase().includes(query)
       );
     }
+
 
     // Sort
     const [field, direction] = sortBy.split('-');

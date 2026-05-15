@@ -10,6 +10,7 @@ export function LibraryProvider({ children }) {
   const [dirHandle, setDirHandle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState('dark');
+  const [userName, setUserName] = useState('User');
 
   // Load initial data
   useEffect(() => {
@@ -19,6 +20,11 @@ export function LibraryProvider({ children }) {
         if (storedTheme) {
           setTheme(storedTheme);
           document.documentElement.setAttribute('data-theme', storedTheme);
+        }
+
+        const storedName = await getSetting('userName');
+        if (storedName) {
+          setUserName(storedName);
         }
 
         const handle = await getSetting('libraryDir');
@@ -36,6 +42,22 @@ export function LibraryProvider({ children }) {
     }
     loadData();
   }, []);
+
+  const updateUserName = async (name) => {
+    setUserName(name);
+    await setSetting('userName', name);
+  };
+
+  const detectGenre = (title, author) => {
+    const text = (title + ' ' + author).toLowerCase();
+    if (text.includes('fantasy') || text.includes('magic') || text.includes('dragon') || text.includes('wizard')) return 'Fantasy';
+    if (text.includes('sci-fi') || text.includes('space') || text.includes('robot') || text.includes('alien') || text.includes('future')) return 'Sci-fi';
+    if (text.includes('self-improvement') || text.includes('habit') || text.includes('mindset') || text.includes('productivity') || text.includes('guide')) return 'Self-improvement';
+    if (text.includes('biography') || text.includes('memoir') || text.includes('life of') || text.includes('autobiography')) return 'Biography';
+    if (text.includes('mystery') || text.includes('thriller') || text.includes('crime') || text.includes('detective') || text.includes('murder')) return 'Mystery Thriller';
+    if (text.includes('novel') || text.includes('fiction') || text.includes('story')) return 'Novel';
+    return 'Other';
+  };
 
   const toggleTheme = async () => {
     const newTheme = theme === 'dark' ? 'light' : 'dark';
@@ -75,16 +97,19 @@ export function LibraryProvider({ children }) {
       if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
         const id = entry.name;
         if (!existingIds.has(id)) {
+          const title = entry.name
+            .replace('.pdf', '')
+            .replace(/[-_]/g, ' ')
+            .replace(/\s+/g, ' ')
+            .trim();
+          
           const newBook = {
             id,
-            title: entry.name
-              .replace('.pdf', '')
-              .replace(/[-_]/g, ' ')
-              .replace(/\s+/g, ' ')
-              .trim(),
+            title,
             author: 'Unknown Author',
             fileHandle: entry,
             category: 'Planned',
+            genre: detectGenre(title, 'Unknown Author'),
             progress: 0,
             lastRead: null,
             addedAt: new Date().toISOString(),
@@ -125,6 +150,9 @@ export function LibraryProvider({ children }) {
           if (meta.pageCount) {
             updatedBook.pageCount = meta.pageCount;
           }
+
+          // Re-detect genre with metadata
+          updatedBook.genre = detectGenre(updatedBook.title, updatedBook.author);
 
           needsUpdate = true;
         } catch {
@@ -175,12 +203,14 @@ export function LibraryProvider({ children }) {
       dirHandle,
       loading,
       theme,
+      userName,
       stats,
       selectDirectory,
       scanDirectory,
       updateBook,
       deleteBook,
-      toggleTheme
+      toggleTheme,
+      updateUserName
     }}>
       {children}
     </LibraryContext.Provider>

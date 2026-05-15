@@ -22,13 +22,18 @@ function Home() {
     .slice(0, 5);
 
   const subjects = [
-    { name: 'Science', count: '1.2k', icon: <FlaskConical size={24} />, color: 'var(--bg-secondary)' },
-    { name: 'Arts', count: '1.8k', icon: <Palette size={24} />, color: 'var(--bg-secondary)' },
-    { name: 'Commerce', count: '230', icon: <Briefcase size={24} />, color: 'var(--bg-secondary)' },
-    { name: 'Design', count: '80', icon: <div className="dot-icon" />, color: 'var(--bg-secondary)' },
-    { name: 'Cooking', count: '180', icon: <Utensils size={24} />, color: 'var(--accent-primary)', textColor: 'var(--bg-primary)' },
-    { name: 'Others', count: '900', icon: <MoreHorizontal size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Self-improvement', icon: <FlaskConical size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Fantasy', icon: <Palette size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Novel', icon: <Briefcase size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Biography', icon: <div className="dot-icon" />, color: 'var(--bg-secondary)' },
+    { name: 'Sci-fi', icon: <Utensils size={24} />, color: 'var(--accent-primary)', textColor: 'var(--bg-primary)' },
+    { name: 'Mystery Thriller', icon: <MoreHorizontal size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Other', icon: <MoreHorizontal size={24} />, color: 'var(--bg-secondary)' },
   ];
+
+  const handleGenreClick = (genre) => {
+    navigate(`/library?genre=${encodeURIComponent(genre)}`);
+  };
 
   if (loading) {
     return (
@@ -45,7 +50,7 @@ function Home() {
       <section className="dashboard-section">
         <div className="section-header">
           <h2>Previous Reading</h2>
-          <button className="filter-btn"><Filter size={14} /> Filter</button>
+          <button className="filter-btn" onClick={() => navigate('/library')}><Filter size={14} /> Filter</button>
         </div>
         <div className="horizontal-scroll">
           {recentlyRead.length > 0 ? (
@@ -64,23 +69,27 @@ function Home() {
           <h2>Subjects section</h2>
         </div>
         <div className="subjects-grid">
-          {subjects.map(subject => (
-            <div 
-              key={subject.name} 
-              className="subject-card" 
-              style={{ background: subject.color, color: subject.textColor || 'inherit' }}
-            >
-              <div className="subject-icon" style={{ color: subject.textColor || 'var(--text-muted)' }}>
-                {subject.icon}
+          {subjects.map(subject => {
+            const count = books.filter(b => b.genre === subject.name).length;
+            return (
+              <div 
+                key={subject.name} 
+                className="subject-card" 
+                style={{ background: subject.color, color: subject.textColor || 'inherit' }}
+                onClick={() => handleGenreClick(subject.name)}
+              >
+                <div className="subject-icon" style={{ color: subject.textColor || 'var(--text-muted)' }}>
+                  {subject.icon}
+                </div>
+                <div className="subject-info">
+                  <h3>{subject.name}</h3>
+                  <p style={{ color: subject.textColor ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
+                    {count} {count === 1 ? 'Book' : 'Books'} available
+                  </p>
+                </div>
               </div>
-              <div className="subject-info">
-                <h3>{subject.name}</h3>
-                <p style={{ color: subject.textColor ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
-                  {subject.count} Books available
-                </p>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 
