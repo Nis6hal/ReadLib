@@ -297,40 +297,54 @@
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .books-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .books-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-    gap: 0.75rem;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
   }
 
   .stats-row {
     grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem;
   }
 
   .page-header h1 {
     font-size: 1.5rem;
   }
 
-  .main-content {
-    padding: 1.25rem;
+  .main-panel {
+    padding: 1rem;
   }
 
   .filter-tabs {
     width: 100%;
+    overflow-x: auto;
+    padding: 0.25rem;
   }
 
   .filter-tab {
-    flex: 1;
-    justify-content: center;
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+    white-space: nowrap;
   }
 }
 
 @media (max-width: 480px) {
   .books-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   }
 
   .stats-row {
     grid-template-columns: 1fr;
+  }
+  
+  .stat-value {
+    font-size: 1.5rem;
   }
 }

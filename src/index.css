@@ -26,6 +26,7 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-xl: 32px;
+  color-scheme: dark;
 }
 
 [data-theme='light'] {
@@ -39,6 +40,7 @@
   --accent-primary: #fbc02d;
   --glass-bg: rgba(255, 255, 255, 0.9);
   --glass-border: rgba(0, 0, 0, 0.05);
+  color-scheme: light;
 }
 
 * {
@@ -237,7 +239,7 @@ h1, h2, h3, h4, h5, h6 {
 
 
 
-@media (max-width: 1200px) {
+@media (max-width: 1024px) {
   .right-sidebar {
     display: none;
   }
@@ -245,10 +247,19 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (max-width: 768px) {
   .sidebar {
-    display: none; /* In a real app we'd add a mobile menu toggle */
+    display: none;
   }
-  .main-content {
+  
+  .main-panel {
     padding: 1rem;
+  }
+  
+  .app-container {
+    flex-direction: column;
+  }
+  
+  .content-wrapper {
+    flex-direction: column;
   }
 }
 
@@ -329,4 +340,16 @@ h1, h2, h3, h4, h5, h6 {
 button:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* Fix for dark mode selects */
+select {
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--glass-border);
+}
+
+option {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
