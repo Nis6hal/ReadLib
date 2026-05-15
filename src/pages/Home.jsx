@@ -6,16 +6,29 @@ import BookCard from '../components/BookCard';
 import '../App.css';
 import './Home.css';
 
+import { Filter, ChevronRight, FlaskConical, Palette, Briefcase, Utensils, MoreHorizontal } from 'lucide-react';
+
 function Home() {
-  const { books, stats, loading, selectDirectory, dirHandle } = useLibrary();
+  const { books, loading, selectDirectory } = useLibrary();
   const navigate = useNavigate();
 
   const recentlyRead = books
     .filter(b => b.lastRead)
     .sort((a, b) => new Date(b.lastRead) - new Date(a.lastRead))
-    .slice(0, 4);
+    .slice(0, 5);
 
-  const currentlyReading = books.filter(b => b.category === 'Reading').slice(0, 4);
+  const newBooks = books
+    .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
+    .slice(0, 5);
+
+  const subjects = [
+    { name: 'Science', count: '1.2k', icon: <FlaskConical size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Arts', count: '1.8k', icon: <Palette size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Commerce', count: '230', icon: <Briefcase size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Design', count: '80', icon: <div className="dot-icon" />, color: 'var(--bg-secondary)' },
+    { name: 'Cooking', count: '180', icon: <Utensils size={24} />, color: 'var(--accent-primary)', textColor: 'var(--bg-primary)' },
+    { name: 'Others', count: '900', icon: <MoreHorizontal size={24} />, color: 'var(--bg-secondary)' },
+  ];
 
   if (loading) {
     return (
@@ -27,104 +40,69 @@ function Home() {
   }
 
   return (
-    <div className="home-page">
-      {/* Hero / Welcome */}
-      <div className="page-header fade-in">
-        <h1>Welcome back 👋</h1>
-        <p className="page-subtitle">Here's an overview of your reading journey</p>
-      </div>
+    <div className="home-page fade-in">
+      {/* Previous Reading */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Previous Reading</h2>
+          <button className="filter-btn"><Filter size={14} /> Filter</button>
+        </div>
+        <div className="horizontal-scroll">
+          {recentlyRead.length > 0 ? (
+            recentlyRead.map(book => (
+              <BookCard key={book.id} book={book} variant="simple" />
+            ))
+          ) : (
+            <div className="empty-section">No recent reading found. Start a book from your library!</div>
+          )}
+        </div>
+      </section>
 
-      {/* Quick Stats */}
-      <div className="stats-row fade-in fade-in-delay-1">
-        <div className="card stat-card accent">
-          <div className="stat-icon accent">
-            <Library size={20} />
-          </div>
-          <span className="stat-value">{stats.total}</span>
-          <span className="stat-label">Total Books</span>
+      {/* Subjects Section */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>Subjects section</h2>
         </div>
-        <div className="card stat-card warning">
-          <div className="stat-icon warning">
-            <BookOpen size={20} />
-          </div>
-          <span className="stat-value">{stats.reading}</span>
-          <span className="stat-label">Currently Reading</span>
+        <div className="subjects-grid">
+          {subjects.map(subject => (
+            <div 
+              key={subject.name} 
+              className="subject-card" 
+              style={{ background: subject.color, color: subject.textColor || 'inherit' }}
+            >
+              <div className="subject-icon" style={{ color: subject.textColor || 'var(--text-muted)' }}>
+                {subject.icon}
+              </div>
+              <div className="subject-info">
+                <h3>{subject.name}</h3>
+                <p style={{ color: subject.textColor ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
+                  {subject.count} Books available
+                </p>
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="card stat-card success">
-          <div className="stat-icon success">
-            <CheckCircle size={20} />
-          </div>
-          <span className="stat-value">{stats.completed}</span>
-          <span className="stat-label">Completed</span>
-        </div>
-        <div className="card stat-card danger">
-          <div className="stat-icon danger">
-            <Clock size={20} />
-          </div>
-          <span className="stat-value">{stats.planned}</span>
-          <span className="stat-label">Planned</span>
-        </div>
-      </div>
+      </section>
 
-      {/* Prompt to add books if none */}
-      {books.length === 0 && (
-        <div className="empty-state card fade-in fade-in-delay-2">
-          <div className="empty-state-icon">
-            <FolderOpen size={36} color="var(--accent-primary)" />
-          </div>
-          <h3>Your library is empty</h3>
-          <p>Select a folder containing your PDF books to get started. ReadLib will scan and organize them for you.</p>
-          <button className="btn btn-primary" onClick={selectDirectory}>
-            <FolderOpen size={18} /> Select Library Folder
-          </button>
+      {/* New Books */}
+      <section className="dashboard-section">
+        <div className="section-header">
+          <h2>New books</h2>
+          <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
         </div>
-      )}
-
-      {/* Continue Reading Section */}
-      {currentlyReading.length > 0 && (
-        <section className="home-section fade-in fade-in-delay-2">
-          <div className="section-header">
-            <h2 className="section-title">
-              <BookOpen size={22} /> Continue Reading
-            </h2>
-            <button className="btn btn-secondary btn-sm" onClick={() => navigate('/reading')}>
-              View All <ArrowRight size={16} />
-            </button>
-          </div>
-          <div className="books-grid">
-            {currentlyReading.map(book => (
-              <BookCard key={book.id} book={book} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Recently Opened */}
-      {recentlyRead.length > 0 && (
-        <section className="home-section fade-in fade-in-delay-3">
-          <div className="section-header">
-            <h2 className="section-title">
-              <Clock size={22} /> Recently Opened
-            </h2>
-          </div>
-          <div className="books-grid">
-            {recentlyRead.map(book => (
-              <BookCard key={book.id} book={book} />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Quick Actions - Show when user has books but none reading */}
-      {books.length > 0 && currentlyReading.length === 0 && recentlyRead.length === 0 && (
-        <div className="card quick-actions fade-in fade-in-delay-2">
-          <h3>🚀 Ready to start reading?</h3>
-          <p>Head to your library and pick a book to begin.</p>
-          <button className="btn btn-primary" onClick={() => navigate('/library')}>
-            <Library size={18} /> Browse Library
-          </button>
+        <div className="horizontal-scroll">
+          {newBooks.length > 0 ? (
+            newBooks.map(book => (
+              <BookCard key={book.id} book={book} variant="simple" />
+            ))
+          ) : (
+            <div className="empty-section">
+              <p>No books in your library yet.</p>
+              <button className="btn btn-primary btn-sm" onClick={selectDirectory}>Add Folder</button>
+            </div>
+          )}
         </div>
-      )}
+      </section>
     </div>
   );
 }

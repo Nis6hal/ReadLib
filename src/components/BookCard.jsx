@@ -40,7 +40,7 @@ function getInitials(title) {
     .join('');
 }
 
-function BookCard({ book, viewMode = 'grid' }) {
+function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
   const { updateBook, deleteBook } = useLibrary();
   const { addToast } = useToast();
   const navigate = useNavigate();
@@ -122,6 +122,29 @@ function BookCard({ book, viewMode = 'grid' }) {
   const [color1, color2] = getBookGradient(book.title);
   const initials = getInitials(book.title);
   const hasCover = !!book.cover;
+
+  if (variant === 'simple') {
+    return (
+      <div className="book-card-simple" onClick={handleRead}>
+        <div className="book-cover-container">
+          {hasCover ? (
+            <img src={book.cover} alt={book.title} className="book-cover-img" />
+          ) : (
+            <div className="book-cover-art" style={{ background: `linear-gradient(135deg, ${color1}, ${color2})` }}>
+              <span>{initials || '?'}</span>
+            </div>
+          )}
+          {book.progress > 0 && (
+            <div className="progress-badge">{Math.round(book.progress)}%</div>
+          )}
+        </div>
+        <div className="book-info-simple">
+          <h3 title={book.title}>{book.title}</h3>
+          <p>{book.author}</p>
+        </div>
+      </div>
+    );
+  }
 
   // === LIST VIEW ===
   if (viewMode === 'list') {

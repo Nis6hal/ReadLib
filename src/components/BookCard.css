@@ -405,3 +405,72 @@
     display: none;
   }
 }
+
+/* Simple Variant (for dashboard) */
+.book-card-simple {
+  flex: 0 0 160px;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.book-card-simple:hover {
+  transform: translateY(-4px);
+}
+
+.book-card-simple .book-cover-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.book-card-simple .book-cover-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.book-card-simple .book-cover-art {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: 700;
+  font-size: 1.5rem;
+}
+
+.book-card-simple .progress-badge {
+  position: absolute;
+  bottom: 0.5rem;
+  right: 0.5rem;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.65rem;
+  font-weight: 600;
+}
+
+.book-info-simple h3 {
+  font-size: 0.85rem;
+  font-weight: 600;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.2rem;
+  color: var(--text-primary);
+}
+
+.book-info-simple p {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+

@@ -11,6 +11,9 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import PdfViewer from './components/PdfViewer';
 
+import TopBar from './components/TopBar';
+import RightSidebar from './components/RightSidebar';
+
 function App() {
   return (
     <LibraryProvider>
@@ -19,15 +22,21 @@ function App() {
           <div className="app-container">
             <Sidebar />
             <main className="main-content">
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/reading" element={<ContinueReading />} />
-                <Route path="/library" element={<Library />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/settings" element={<Settings />} />
-                <Route path="/read/:id" element={<PdfViewer />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
+              <TopBar />
+              <div className="content-wrapper">
+                <div className="main-panel">
+                  <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/reading" element={<ContinueReading />} />
+                    <Route path="/library" element={<Library />} />
+                    <Route path="/profile" element={<Profile />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/read/:id" element={<PdfViewer />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </div>
+                <RightSidebar />
+              </div>
             </main>
           </div>
         </Router>

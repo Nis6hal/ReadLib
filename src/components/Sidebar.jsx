@@ -3,31 +3,25 @@ import { NavLink } from 'react-router-dom';
 import { Home, BookOpen, Library, User, Settings, Menu, X } from 'lucide-react';
 import './Sidebar.css';
 
-function Sidebar() {
-  const [collapsed, setCollapsed] = useState(false);
+import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen } from 'lucide-react';
 
+function Sidebar() {
   const navItems = [
-    { to: '/', icon: <Home size={20} />, label: 'Home', end: true },
-    { to: '/reading', icon: <BookOpen size={20} />, label: 'Continue Reading' },
-    { to: '/library', icon: <Library size={20} />, label: 'Library' },
-    { to: '/profile', icon: <User size={20} />, label: 'Profile' },
-    { to: '/settings', icon: <Settings size={20} />, label: 'Settings' }
+    { to: '/', icon: <Home size={22} />, label: 'Home', end: true },
+    { to: '/library', icon: <Library size={22} />, label: 'Library' },
+    { to: '/reading', icon: <BookOpen size={22} />, label: 'Reading' },
+    { to: '/downloads', icon: <Download size={22} />, label: 'Downloads' },
+    { to: '/messages', icon: <Mail size={22} />, label: 'Messages' },
+    { to: '/contact', icon: <Phone size={22} />, label: 'Contact' },
+    { to: '/settings', icon: <Settings size={22} />, label: 'Settings' }
   ];
 
   return (
-    <aside className={`sidebar glass-panel ${collapsed ? 'collapsed' : ''}`}>
+    <aside className="sidebar">
       <div className="sidebar-header">
-        <div className="logo-icon">
-          <BookOpen size={24} color="var(--accent-primary)" />
+        <div className="logo-container">
+          <BookOpen size={28} className="logo-icon" />
         </div>
-        {!collapsed && <h2>ReadLib</h2>}
-        <button 
-          className="sidebar-toggle btn-icon"
-          onClick={() => setCollapsed(!collapsed)}
-          title={collapsed ? 'Expand' : 'Collapse'}
-        >
-          {collapsed ? <Menu size={18} /> : <X size={18} />}
-        </button>
       </div>
 
       <nav className="sidebar-nav">
@@ -39,14 +33,15 @@ function Sidebar() {
             className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}
             title={item.label}
           >
-            <span className="nav-icon">{item.icon}</span>
-            {!collapsed && <span className="nav-label">{item.label}</span>}
+            {item.icon}
           </NavLink>
         ))}
       </nav>
       
       <div className="sidebar-footer">
-        {!collapsed && <p className="version">ReadLib v1.0.0</p>}
+        <button className="nav-item logout-btn" title="Logout">
+          <LogOut size={22} />
+        </button>
       </div>
     </aside>
   );
