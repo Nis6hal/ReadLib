@@ -142,6 +142,24 @@
   margin: 0;
 }
 
+.modal-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.modal-genre-select {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.85rem;
+  outline: none;
+  cursor: pointer;
+}
+
 .modal-section h3 {
   font-size: 0.95rem;
   text-transform: uppercase;
@@ -211,23 +229,31 @@
 }
 
 @media (max-width: 768px) {
+  .book-detail-modal {
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    margin: 1rem;
+  }
+
   .modal-body {
     flex-direction: column;
     padding: 1.5rem;
     gap: 1.5rem;
+    overflow-y: auto;
   }
   
   .modal-left {
-    width: 140px;
-    margin: 0 auto;
-    flex-direction: row;
     width: 100%;
+    margin: 0;
+    flex-direction: row;
     align-items: center;
     gap: 1.5rem;
   }
 
   .modal-cover {
     width: 100px;
+    flex-shrink: 0;
   }
 
   .modal-read-btn {
@@ -236,5 +262,9 @@
 
   .modal-title-row h2 {
     font-size: 1.4rem;
+  }
+  
+  .modal-right {
+    padding-top: 0;
   }
 }

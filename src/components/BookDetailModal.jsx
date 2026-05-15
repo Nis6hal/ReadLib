@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Play, X, Star, Bookmark, BookOpen, CheckCircle, Clock } from 'lucide-react';
 import { useLibrary, GENRES } from '../context/LibraryContext';
@@ -51,11 +52,18 @@ function BookDetailModal({ book, onClose }) {
     addToast(updated.isFavorite ? 'Added to Favorites' : 'Removed from Favorites', 'info');
   };
 
+  const changeGenre = async (newGenre) => {
+    if (book.genre === newGenre) return;
+    const updated = { ...book, genre: newGenre };
+    await updateBook(updated);
+    addToast(`Genre updated to ${newGenre}`, 'success');
+  };
+
   const [color1, color2] = getBookGradient(book.title);
   const initials = getInitials(book.title);
   const hasCover = !!book.cover;
 
-  return (
+  return createPortal(
     <div className={`modal-overlay ${isClosing ? 'closing' : ''}`} onClick={handleClose}>
       <div className={`modal-content book-detail-modal card ${isClosing ? 'closing' : ''}`} onClick={e => e.stopPropagation()}>
         <button className="modal-close-btn btn-icon" onClick={handleClose}>
@@ -85,7 +93,18 @@ function BookDetailModal({ book, onClose }) {
                 </button>
               </div>
               <p className="modal-author">by {book.author}</p>
-              <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
+              <div className="modal-meta-row">
+                <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
+                <select 
+                  className="modal-genre-select" 
+                  value={book.genre || 'Other'} 
+                  onChange={(e) => changeGenre(e.target.value)}
+                >
+                  {GENRES.map(g => (
+                    <option key={g} value={g}>{g}</option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="modal-section">
@@ -132,7 +151,8 @@ function BookDetailModal({ book, onClose }) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
