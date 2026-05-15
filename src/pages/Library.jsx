@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
-import { useLibrary } from '../context/LibraryContext';
+import { useLibrary, GENRES } from '../context/LibraryContext';
 import { useToast } from '../components/Toast';
 import BookCard from '../components/BookCard';
 import { BookCardSkeleton } from '../components/Skeleton';
@@ -32,7 +32,7 @@ function Library() {
   const [sortBy, setSortBy] = useState('added-desc');
   const [viewMode, setViewMode] = useState('grid');
 
-  const genres = ['All', 'Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
+  const genres = ['All', ...GENRES];
   const collections = [
     { id: 'All', label: 'All Books' },
     { id: 'Favorites', label: '⭐ Favorites' },
@@ -109,7 +109,7 @@ function Library() {
 
   const getFilterCount = (filter) => {
     if (filter === 'All') return books.length;
-    return books.filter(b => b.category === filter).length;
+    return books.filter(b => b.genre === filter).length;
   };
 
   return (

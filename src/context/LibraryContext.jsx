@@ -3,6 +3,8 @@ import { getAllBooks, saveBook, deleteBook as deleteBookDB, getSetting, setSetti
 import { generateThumbnail } from '../services/thumbnail';
 import { extractPdfMetadata } from '../services/metadata';
 
+export const GENRES = ['Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
+
 const LibraryContext = createContext();
 
 export function LibraryProvider({ children }) {

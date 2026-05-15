@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Play, Check, BookOpen, Plus, X, Trash2, Pencil, Save } from 'lucide-react';
-import { useLibrary } from '../context/LibraryContext';
+import { Play, Check, BookOpen, Plus, X, Trash2, Pencil, Save, Star } from 'lucide-react';
+import { useLibrary, GENRES } from '../context/LibraryContext';
 import { useToast } from './Toast';
 import './BookCard.css';
 
@@ -48,6 +48,7 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(book.title);
   const [editAuthor, setEditAuthor] = useState(book.author);
+  const [editGenre, setEditGenre] = useState(book.genre || 'Other');
   const [confirmDelete, setConfirmDelete] = useState(false);
   const menuRef = useRef(null);
   const editTitleRef = useRef(null);
@@ -67,10 +68,29 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
     addToast(`Moved to ${newCategory}`, 'success');
   };
 
+  const toggleFavorite = async (e) => {
+    e?.stopPropagation();
+    const updated = { ...book, isFavorite: !book.isFavorite };
+    await updateBook(updated);
+    addToast(updated.isFavorite ? 'Added to Favorites' : 'Removed from Favorites', 'info');
+  };
+
+  const changeGenre = async (newGenre) => {
+    if (book.genre === newGenre) {
+      setShowMenu(false);
+      return;
+    }
+    const updated = { ...book, genre: newGenre };
+    await updateBook(updated);
+    setShowMenu(false);
+    addToast(`Genre updated to ${newGenre}`, 'success');
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditTitle(book.title);
     setEditAuthor(book.author);
+    setEditGenre(book.genre || 'Other');
     setShowMenu(false);
     setTimeout(() => editTitleRef.current?.focus(), 50);
   };
@@ -79,7 +99,7 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
     const trimTitle = editTitle.trim();
     const trimAuthor = editAuthor.trim();
     if (!trimTitle) return;
-    const updated = { ...book, title: trimTitle, author: trimAuthor || 'Unknown Author' };
+    const updated = { ...book, title: trimTitle, author: trimAuthor || 'Unknown Author', genre: editGenre };
     await updateBook(updated);
     setIsEditing(false);
     addToast('Book details updated', 'success');
@@ -231,6 +251,13 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
         <div className="category-badge">
           <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
         </div>
+        <button 
+          className={`favorite-btn ${book.isFavorite ? 'active' : ''}`}
+          onClick={toggleFavorite}
+          title={book.isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+        >
+          <Star size={18} fill={book.isFavorite ? 'var(--accent-primary)' : 'none'} />
+        </button>
       </div>
 
       <div className="book-info">
@@ -251,6 +278,15 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
               className="edit-input edit-author-input"
               placeholder="Author"
             />
+            <select 
+              value={editGenre} 
+              onChange={e => setEditGenre(e.target.value)}
+              className="edit-input edit-genre-input"
+            >
+              {GENRES.map(g => (
+                <option key={g} value={g}>{g}</option>
+              ))}
+            </select>
             <div className="edit-actions">
               <button className="btn btn-primary btn-sm" onClick={handleSaveEdit}><Save size={13} /> Save</button>
               <button className="btn btn-secondary btn-sm" onClick={handleCancelEdit}><X size={13} /> Cancel</button>
@@ -306,7 +342,27 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
                     {cat}
                   </button>
                 ))}
+                
                 <div className="dropdown-divider"></div>
+                <div className="dropdown-header">Genre</div>
+                <div className="genre-grid">
+                  {GENRES.map(g => (
+                    <button 
+                      key={g} 
+                      className={`genre-item ${book.genre === g ? 'active' : ''}`}
+                      onClick={() => changeGenre(g)}
+                      title={g}
+                    >
+                      {g}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="dropdown-divider"></div>
+                <button className="dropdown-item" onClick={toggleFavorite}>
+                  <Star size={14} fill={book.isFavorite ? 'currentColor' : 'none'} />
+                  {book.isFavorite ? 'Remove Favorite' : 'Mark as Favorite'}
+                </button>
                 <button className="dropdown-item" onClick={handleEdit}>
                   <Pencil size={14} /> Edit Details
                 </button>
