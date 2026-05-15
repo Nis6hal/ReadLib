@@ -11,6 +11,7 @@ export function LibraryProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [theme, setTheme] = useState('dark');
   const [userName, setUserName] = useState('User');
+  const [readingHistory, setReadingHistory] = useState({});
 
   // Load initial data
   useEffect(() => {
@@ -25,6 +26,11 @@ export function LibraryProvider({ children }) {
         const storedName = await getSetting('userName');
         if (storedName) {
           setUserName(storedName);
+        }
+
+        const history = await getSetting('readingHistory');
+        if (history) {
+          setReadingHistory(history);
         }
 
         const handle = await getSetting('libraryDir');
@@ -42,6 +48,16 @@ export function LibraryProvider({ children }) {
     }
     loadData();
   }, []);
+
+  const logReadingSession = async (pages) => {
+    const today = new Date().toISOString().split('T')[0];
+    const newHistory = {
+      ...readingHistory,
+      [today]: (readingHistory[today] || 0) + pages
+    };
+    setReadingHistory(newHistory);
+    await setSetting('readingHistory', newHistory);
+  };
 
   const updateUserName = async (name) => {
     setUserName(name);
@@ -204,13 +220,15 @@ export function LibraryProvider({ children }) {
       loading,
       theme,
       userName,
+      readingHistory,
       stats,
       selectDirectory,
       scanDirectory,
       updateBook,
       deleteBook,
       toggleTheme,
-      updateUserName
+      updateUserName,
+      logReadingSession
     }}>
       {children}
     </LibraryContext.Provider>

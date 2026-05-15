@@ -8,8 +8,55 @@ import './Home.css';
 
 import { Filter, ChevronRight, FlaskConical, Palette, Briefcase, Utensils, MoreHorizontal } from 'lucide-react';
 
+import { BookCardSkeleton, GenreCardSkeleton } from '../components/Skeleton';
+
+function ReadingActivity({ history }) {
+  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const today = new Date();
+  const last7Days = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date();
+    d.setDate(today.getDate() - (6 - i));
+    const dateStr = d.toISOString().split('T')[0];
+    return {
+      day: days[d.getDay()],
+      pages: history[dateStr] || 0,
+      fullDate: dateStr
+    };
+  });
+
+  const maxPages = Math.max(...last7Days.map(d => d.pages), 10);
+
+  return (
+    <div className="reading-activity card">
+      <div className="activity-header">
+        <h3>Reading Activity</h3>
+        <p>Your progress over the last 7 days</p>
+      </div>
+      <div className="chart-container">
+        {last7Days.map(d => {
+          const height = (d.pages / maxPages) * 100;
+          return (
+            <div key={d.fullDate} className="chart-column">
+              <div className="bar-wrapper">
+                <div 
+                  className="bar" 
+                  style={{ height: `${height}%` }}
+                  title={`${d.pages} pages read on ${d.day}`}
+                >
+                  {d.pages > 0 && <span className="bar-tooltip">{d.pages}</span>}
+                </div>
+              </div>
+              <span className="day-label">{d.day}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Home() {
-  const { books, loading, selectDirectory } = useLibrary();
+  const { books, loading, selectDirectory, readingHistory } = useLibrary();
   const navigate = useNavigate();
 
   const recentlyRead = books
@@ -37,15 +84,28 @@ function Home() {
 
   if (loading) {
     return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading your library...</p>
+      <div className="home-page fade-in">
+        <section className="dashboard-section">
+          <div className="section-header"><h2>Previous Reading</h2></div>
+          <div className="horizontal-scroll">
+            {[1, 2, 3, 4].map(i => <BookCardSkeleton key={i} />)}
+          </div>
+        </section>
+        <section className="dashboard-section">
+          <div className="section-header"><h2>Genres</h2></div>
+          <div className="subjects-grid">
+            {[1, 2, 3, 4, 5, 6].map(i => <GenreCardSkeleton key={i} />)}
+          </div>
+        </section>
       </div>
     );
   }
 
+
   return (
     <div className="home-page fade-in">
+      <ReadingActivity history={readingHistory} />
+      
       {/* Previous Reading */}
       <section className="dashboard-section">
         <div className="section-header">

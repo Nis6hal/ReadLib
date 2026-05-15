@@ -17,6 +17,8 @@ const SORT_OPTIONS = [
   { value: 'lastread-desc', label: 'Last Read' },
 ];
 
+import { BookCardSkeleton } from '../components/Skeleton';
+
 function Library() {
   const { books, loading, selectDirectory, scanDirectory, dirHandle } = useLibrary();
   const { addToast } = useToast();
@@ -24,19 +26,35 @@ function Library() {
   const initialFilter = searchParams.get('genre') || 'All';
   
   const [activeFilter, setActiveFilter] = useState(initialFilter);
+  const [activeCollection, setActiveCollection] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [sortBy, setSortBy] = useState('added-desc');
   const [viewMode, setViewMode] = useState('grid');
 
-  const filters = ['All', 'Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
+  const genres = ['All', 'Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
+  const collections = [
+    { id: 'All', label: 'All Books' },
+    { id: 'Favorites', label: '⭐ Favorites' },
+    { id: 'Must Read', label: '📚 Must Read' },
+    { id: 'Finished', label: '✅ Finished' },
+  ];
 
   const filteredBooks = useMemo(() => {
     let result = [...books];
 
-    // Filter by genre/category
+    // Filter by genre
     if (activeFilter !== 'All') {
       result = result.filter(b => b.genre === activeFilter);
+    }
+
+    // Filter by Collection
+    if (activeCollection === 'Favorites') {
+      result = result.filter(b => b.isFavorite);
+    } else if (activeCollection === 'Must Read') {
+      result = result.filter(b => b.progress > 0 && b.progress < 20);
+    } else if (activeCollection === 'Finished') {
+      result = result.filter(b => b.progress === 100);
     }
 
     // Filter by search
@@ -48,6 +66,7 @@ function Library() {
           b.author.toLowerCase().includes(query)
       );
     }
+
 
 
     // Sort
@@ -93,156 +112,112 @@ function Library() {
     return books.filter(b => b.category === filter).length;
   };
 
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading library...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="library-page">
-      <div className="page-header fade-in">
-        <div className="library-header-row">
-          <div>
-            <h1>Library</h1>
-            <p className="page-subtitle">{books.length} book{books.length !== 1 ? 's' : ''} in your collection</p>
+      <div className="library-header fade-in">
+        <div className="header-main">
+          <h1>Library</h1>
+          <div className="header-stats">
+            <span>{books.length} Books</span>
+            <span>{dirHandle?.name || 'No folder selected'}</span>
           </div>
-          <div className="library-actions">
-            {dirHandle && (
+        </div>
+        <div className="header-actions">
+          <button className={`btn ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>
+            <RefreshCw size={16} /> Rescan
+          </button>
+          <button className="btn btn-primary" onClick={selectDirectory}>
+            <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Select Folder'}
+          </button>
+        </div>
+      </div>
+
+      <div className="library-controls fade-in fade-in-delay-1">
+        <div className="search-bar">
+          <Search size={18} className="search-icon" />
+          <input 
+            type="text" 
+            placeholder="Search by title or author..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+
+        <div className="filter-scroll">
+          <div className="filter-group">
+            <span className="filter-label">Collections</span>
+            {collections.map(col => (
               <button 
-                className="btn btn-secondary" 
-                onClick={handleRescan} 
-                title="Re-scan directory"
-                disabled={isScanning}
+                key={col.id} 
+                className={`filter-tag ${activeCollection === col.id ? 'active' : ''}`}
+                onClick={() => setActiveCollection(col.id)}
               >
-                <RefreshCw size={16} className={isScanning ? 'spin-icon' : ''} /> 
-                {isScanning ? 'Scanning...' : 'Rescan'}
+                {col.label}
               </button>
-            )}
-            <button className="btn btn-primary" onClick={selectDirectory}>
-              <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Add Folder'}
+            ))}
+          </div>
+          <div className="filter-divider"></div>
+          <div className="filter-group">
+            <span className="filter-label">Genres</span>
+            {genres.map(genre => (
+              <button 
+                key={genre} 
+                className={`filter-tag ${activeFilter === genre ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveFilter(genre);
+                  setSearchParams(genre === 'All' ? {} : { genre });
+                }}
+              >
+                {genre}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="view-controls">
+          <div className="sort-control">
+            <ArrowUpDown size={16} />
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              {SORT_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="layout-toggle">
+            <button className={`btn-icon ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}>
+              <LayoutGrid size={18} />
+            </button>
+            <button className={`btn-icon ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>
+              <List size={18} />
             </button>
           </div>
         </div>
       </div>
 
-      {books.length > 0 && (
-        <>
-          {/* Search + View Controls */}
-          <div className="library-controls fade-in fade-in-delay-1">
-            <div className="search-bar">
-              <Search size={16} className="search-icon" />
-              <input
-                type="text"
-                placeholder="Search by title or author..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-                id="library-search"
-              />
-            </div>
-
-            <div className="library-view-controls">
-              {/* Sort */}
-              <div className="sort-select-wrapper">
-                <ArrowUpDown size={14} className="sort-icon" />
-                <select 
-                  value={sortBy} 
-                  onChange={e => setSortBy(e.target.value)}
-                  className="sort-select"
-                  id="library-sort"
-                >
-                  {SORT_OPTIONS.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Grid/List Toggle */}
-              <div className="view-toggle">
-                <button 
-                  className={`view-toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-                  onClick={() => setViewMode('grid')}
-                  title="Grid view"
-                  id="view-grid"
-                >
-                  <LayoutGrid size={16} />
-                </button>
-                <button 
-                  className={`view-toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-                  onClick={() => setViewMode('list')}
-                  title="List view"
-                  id="view-list"
-                >
-                  <List size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Category Filters */}
-          <div className="filter-tabs fade-in fade-in-delay-1">
-            {filters.map(filter => (
-              <button
-                key={filter}
-                className={`filter-tab ${activeFilter === filter ? 'active' : ''}`}
-                onClick={() => setActiveFilter(filter)}
-                id={`filter-${filter.toLowerCase()}`}
-              >
-                {filter}
-                <span className="filter-count">{getFilterCount(filter)}</span>
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-
-      {/* Books Grid or List */}
-      {filteredBooks.length > 0 ? (
-        viewMode === 'grid' ? (
-          <div className="books-grid fade-in fade-in-delay-2">
-            {filteredBooks.map(book => (
-              <BookCard key={book.id} book={book} viewMode="grid" />
-            ))}
-          </div>
-        ) : (
-          <div className="books-list fade-in fade-in-delay-2">
-            {filteredBooks.map(book => (
-              <BookCard key={book.id} book={book} viewMode="list" />
-            ))}
-          </div>
-        )
-      ) : (
-        <div className="empty-state card fade-in fade-in-delay-2">
-          <div className="empty-state-icon">
-            <LibraryIcon size={36} color="var(--accent-primary)" />
-          </div>
-          {books.length === 0 ? (
-            <>
-              <h3>No books yet</h3>
-              <p>Select a folder containing PDF files to populate your library.</p>
-              <button className="btn btn-primary" onClick={selectDirectory}>
-                <FolderOpen size={18} /> Select Library Folder
-              </button>
-            </>
-          ) : (
-            <>
-              <h3>No matching books</h3>
-              <p>Try adjusting your search or filter criteria.</p>
-              <button className="btn btn-secondary" onClick={() => { setSearchQuery(''); setActiveFilter('All'); }}>
-                Clear Filters
-              </button>
-            </>
-          )}
+      {loading ? (
+        <div className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}>
+          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <BookCardSkeleton key={i} />)}
         </div>
-      )}
-
-      {/* Results count */}
-      {books.length > 0 && filteredBooks.length > 0 && (
-        <div className="results-count fade-in fade-in-delay-3">
-          Showing {filteredBooks.length} of {books.length} books
+      ) : filteredBooks.length > 0 ? (
+        <div className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}>
+          {filteredBooks.map((book) => (
+            <BookCard 
+              key={book.id} 
+              book={book} 
+              variant={viewMode === 'list' ? 'list' : 'full'}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state fade-in fade-in-delay-2">
+          <div className="empty-icon">
+            <LibraryIcon size={48} />
+          </div>
+          <h3>No books found</h3>
+          <p>Try adjusting your search or filters, or add a new folder to your library.</p>
+          <button className="btn btn-primary" onClick={selectDirectory}>
+            Add Folder
+          </button>
         </div>
       )}
     </div>

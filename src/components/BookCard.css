@@ -16,6 +16,7 @@
   border-bottom: 1px solid var(--glass-border);
   cursor: pointer;
   overflow: hidden;
+  perspective: 1000px;
 }
 
 .book-cover.has-cover {
@@ -23,30 +24,37 @@
 }
 
 .book-cover:hover .book-cover-img {
-  transform: scale(1.05);
+  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
+  box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
 }
 
 .book-cover:hover .book-cover-art {
-  transform: scale(1.05) rotate(-1deg);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
+  box-shadow: 10px 10px 25px rgba(0,0,0,0.4);
 }
+
 
 .book-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transform-style: preserve-3d;
 }
 
 .book-cover-art {
-  width: 68px;
-  height: 90px;
-  border-radius: 6px;
+  width: 80%;
+  height: 85%;
+  background: var(--gradient-accent);
+  border-radius: 4px;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-left: 3px solid rgba(255, 255, 255, 0.1);
+  transform-style: preserve-3d;
 }
 
 .book-initials {
@@ -427,12 +435,20 @@
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  perspective: 1000px;
+}
+
+.book-card-simple:hover .book-cover-img,
+.book-card-simple:hover .book-cover-art {
+  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
+  box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
 }
 
 .book-card-simple .book-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .book-card-simple .book-cover-art {
@@ -444,7 +460,9 @@
   color: white;
   font-weight: 700;
   font-size: 1.5rem;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
+
 
 .book-card-simple .progress-badge {
   position: absolute;
