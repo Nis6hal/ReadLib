@@ -52,9 +52,9 @@ function Library() {
     if (activeCollection === 'Favorites') {
       result = result.filter(b => b.isFavorite);
     } else if (activeCollection === 'Must Read') {
-      result = result.filter(b => b.progress > 0 && b.progress < 20);
+      result = result.filter(b => b.category === 'Planned');
     } else if (activeCollection === 'Finished') {
-      result = result.filter(b => b.progress === 100);
+      result = result.filter(b => b.category === 'Completed');
     }
 
     // Filter by search

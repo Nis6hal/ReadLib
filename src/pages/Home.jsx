@@ -68,6 +68,27 @@ function Home() {
     .sort((a, b) => new Date(b.addedAt) - new Date(a.addedAt))
     .slice(0, 5);
 
+  const authorMap = books.reduce((acc, book) => {
+    const author = book.author || 'Unknown Author';
+    if (author === 'Unknown Author') return acc;
+    if (!acc[author]) {
+      acc[author] = { name: author, books: 0, avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(author)}&background=random` };
+    }
+    acc[author].books += 1;
+    return acc;
+  }, {});
+
+  const topAuthors = Object.values(authorMap)
+    .sort((a, b) => b.books - a.books)
+    .slice(0, 4);
+
+  const stats = {
+    total: books.length,
+    read: books.filter(b => b.category === 'Completed').length,
+    planned: books.filter(b => b.category === 'Planned').length,
+    reading: books.filter(b => b.category === 'Reading').length,
+  };
+
   const subjects = [
     { name: 'Self-improvement', icon: <FlaskConical size={24} />, color: 'var(--bg-secondary)' },
     { name: 'Fantasy', icon: <Palette size={24} />, color: 'var(--bg-secondary)' },
@@ -104,6 +125,25 @@ function Home() {
 
   return (
     <div className="home-page fade-in">
+      
+      <div className="stats-row">
+        <div className="stat-card accent">
+          <div className="stat-icon accent"><BookOpen size={20} /></div>
+          <div className="stat-value">{stats.total}</div>
+          <div className="stat-label">Total Books</div>
+        </div>
+        <div className="stat-card success">
+          <div className="stat-icon success"><CheckCircle size={20} /></div>
+          <div className="stat-value">{stats.read}</div>
+          <div className="stat-label">Finished</div>
+        </div>
+        <div className="stat-card warning">
+          <div className="stat-icon warning"><TrendingUp size={20} /></div>
+          <div className="stat-value">{stats.reading}</div>
+          <div className="stat-label">Currently Reading</div>
+        </div>
+      </div>
+
       <ReadingActivity history={readingHistory} />
       
       {/* Previous Reading */}
@@ -172,6 +212,27 @@ function Home() {
           )}
         </div>
       </section>
+
+      {/* Top Authors */}
+      {topAuthors.length > 0 && (
+        <section className="dashboard-section fade-in fade-in-delay-3">
+          <div className="section-header">
+            <h2>Top Authors</h2>
+            <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
+          </div>
+          <div className="horizontal-scroll">
+            {topAuthors.map(author => (
+              <div key={author.name} className="author-card-large card" onClick={() => navigate(`/library?search=${encodeURIComponent(author.name)}`)}>
+                <img src={author.avatar} alt={author.name} className="author-avatar-large" />
+                <div className="author-info-large">
+                  <h3>{author.name}</h3>
+                  <p>{author.books} Books</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

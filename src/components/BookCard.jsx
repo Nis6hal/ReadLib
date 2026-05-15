@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Check, BookOpen, Plus, X, Trash2, Pencil, Save, Star } from 'lucide-react';
 import { useLibrary, GENRES } from '../context/LibraryContext';
 import { useToast } from './Toast';
+import BookDetailModal from './BookDetailModal';
 import './BookCard.css';
 
 // Generate a unique gradient based on book title (fallback)
@@ -50,11 +51,19 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
   const [editAuthor, setEditAuthor] = useState(book.author);
   const [editGenre, setEditGenre] = useState(book.genre || 'Other');
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [showModal, setShowModal] = useState(false);
   const menuRef = useRef(null);
   const editTitleRef = useRef(null);
 
-  const handleRead = () => {
+  const handleRead = (e) => {
+    e?.stopPropagation();
     navigate(`/read/${encodeURIComponent(book.id)}`);
+  };
+
+  const handleCardClick = () => {
+    if (!isEditing) {
+      setShowModal(true);
+    }
   };
 
   const changeCategory = async (newCategory) => {
@@ -145,8 +154,9 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
 
   if (variant === 'simple') {
     return (
-      <div className="book-card-simple" onClick={handleRead}>
-        <div className="book-cover-container">
+      <>
+        <div className="book-card-simple" onClick={handleCardClick}>
+          <div className="book-cover-container">
           {hasCover ? (
             <img src={book.cover} alt={book.title} className="book-cover-img" />
           ) : (
@@ -163,18 +173,21 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
           <p>{book.author}</p>
         </div>
       </div>
+      {showModal && <BookDetailModal book={book} onClose={() => setShowModal(false)} />}
+      </>
     );
   }
 
   // === LIST VIEW ===
   if (viewMode === 'list') {
     return (
-      <div className="book-list-item card">
-        <div
-          className={`book-list-cover ${hasCover ? 'has-cover' : ''}`}
-          style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
-          onClick={handleRead}
-        >
+      <>
+        <div className="book-list-item card">
+          <div
+            className={`book-list-cover ${hasCover ? 'has-cover' : ''}`}
+            style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
+            onClick={handleCardClick}
+          >
           {hasCover ? (
             <img src={book.cover} alt={book.title} className="book-cover-img" loading="lazy" />
           ) : (
@@ -184,7 +197,7 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
           )}
         </div>
 
-        <div className="book-list-info" onClick={handleRead}>
+        <div className="book-list-info" onClick={handleCardClick}>
           {isEditing ? (
             <div className="inline-edit" onClick={(e) => e.stopPropagation()}>
               <input ref={editTitleRef} value={editTitle} onChange={e => setEditTitle(e.target.value)} onKeyDown={handleEditKeyDown} className="edit-input edit-title-input" placeholder="Title" />
@@ -225,16 +238,19 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
           )}
         </div>
       </div>
+      {showModal && <BookDetailModal book={book} onClose={() => setShowModal(false)} />}
+      </>
     );
   }
 
   // === GRID VIEW (default) ===
   return (
+    <>
     <div className="card book-card">
       <div
         className={`book-cover ${hasCover ? 'has-cover' : ''}`}
         style={!hasCover ? { background: `linear-gradient(145deg, ${color1}22, ${color2}11)` } : undefined}
-        onClick={handleRead}
+        onClick={handleCardClick}
       >
         {hasCover ? (
           <img
@@ -375,6 +391,8 @@ function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
         </div>
       </div>
     </div>
+    {showModal && <BookDetailModal book={book} onClose={() => setShowModal(false)} />}
+    </>
   );
 }
 

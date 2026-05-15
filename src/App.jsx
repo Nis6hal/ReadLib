@@ -12,7 +12,6 @@ import Settings from './pages/Settings';
 import PdfViewer from './components/PdfViewer';
 
 import TopBar from './components/TopBar';
-import RightSidebar from './components/RightSidebar';
 
 function App() {
   return (
@@ -35,7 +34,6 @@ function App() {
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </div>
-                <RightSidebar />
               </div>
             </main>
           </div>

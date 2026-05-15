@@ -1,0 +1,240 @@
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: fadeIn 0.25s ease-out forwards;
+}
+
+.modal-overlay.closing {
+  animation: fadeOut 0.25s ease-in forwards;
+}
+
+.book-detail-modal {
+  position: relative;
+  width: 100%;
+  max-width: 680px;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  padding: 0;
+  animation: slideUpFade 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.book-detail-modal.closing {
+  animation: slideDownFade 0.25s ease-in forwards;
+}
+
+.modal-close-btn {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 10;
+  background: var(--bg-secondary);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+}
+
+.modal-body {
+  display: flex;
+  gap: 2rem;
+  padding: 2.5rem;
+}
+
+.modal-left {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  width: 200px;
+  flex-shrink: 0;
+}
+
+.modal-cover {
+  width: 100%;
+  aspect-ratio: 2/3;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.modal-initials {
+  font-family: 'Outfit', sans-serif;
+  font-weight: 700;
+  font-size: 3rem;
+  color: white;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.modal-read-btn {
+  width: 100%;
+  padding: 0.85rem;
+  font-size: 1rem;
+}
+
+.modal-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-top: 0.5rem;
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+
+.modal-title-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  width: 100%;
+  gap: 1rem;
+}
+
+.modal-title-row h2 {
+  font-size: 1.85rem;
+  line-height: 1.2;
+  margin: 0;
+}
+
+.favorite-btn-large {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.favorite-btn-large:hover {
+  transform: scale(1.1);
+}
+
+.favorite-btn-large.active {
+  color: var(--accent-primary);
+}
+
+.modal-author {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.modal-section h3 {
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin-bottom: 0.85rem;
+}
+
+.collection-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.collection-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.15rem;
+  border-radius: 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collection-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.collection-btn.active {
+  background: var(--gradient-accent);
+  color: white;
+  border-color: transparent;
+  box-shadow: 0 4px 12px rgba(251, 192, 45, 0.2);
+}
+
+.modal-progress {
+  background: var(--bg-secondary);
+  padding: 1.25rem;
+  border-radius: 12px;
+  border: 1px solid var(--glass-border);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(40px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slideDownFade {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(40px) scale(0.95); }
+}
+
+@media (max-width: 768px) {
+  .modal-body {
+    flex-direction: column;
+    padding: 1.5rem;
+    gap: 1.5rem;
+  }
+  
+  .modal-left {
+    width: 140px;
+    margin: 0 auto;
+    flex-direction: row;
+    width: 100%;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .modal-cover {
+    width: 100px;
+  }
+
+  .modal-read-btn {
+    flex: 1;
+  }
+
+  .modal-title-row h2 {
+    font-size: 1.4rem;
+  }
+}
