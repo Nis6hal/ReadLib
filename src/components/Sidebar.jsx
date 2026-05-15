@@ -1,12 +1,15 @@
+import React, { useState } from 'react';
+import { NavLink } from 'react-router-dom';
 import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import { useToast } from './Toast';
 import './Sidebar.css';
 
+
 function Sidebar() {
   const { scanDirectory, dirHandle } = useLibrary();
   const { addToast } = useToast();
-  const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const navItems = [
     { to: '/', icon: <Home size={22} />, label: 'Home', end: true },

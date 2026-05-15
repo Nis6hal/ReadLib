@@ -1,7 +1,9 @@
+import React from 'react';
 import { Search, Bell, Mail } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useLibrary } from '../context/LibraryContext';
 import './TopBar.css';
+
 
 function TopBar() {
   const { userName } = useLibrary();

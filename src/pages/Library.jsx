@@ -3,6 +3,7 @@ import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, Lay
 import { useLibrary } from '../context/LibraryContext';
 import { useToast } from '../components/Toast';
 import BookCard from '../components/BookCard';
+import { BookCardSkeleton } from '../components/Skeleton';
 import '../App.css';
 import './Library.css';
 import { useSearchParams } from 'react-router-dom';
@@ -16,8 +17,6 @@ const SORT_OPTIONS = [
   { value: 'progress-asc', label: 'Least Progress' },
   { value: 'lastread-desc', label: 'Last Read' },
 ];
-
-import { BookCardSkeleton } from '../components/Skeleton';
 
 function Library() {
   const { books, loading, selectDirectory, scanDirectory, dirHandle } = useLibrary();
