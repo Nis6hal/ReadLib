@@ -63,7 +63,24 @@
 }
 
 .logout-btn {
+  margin-top: auto;
+  color: #ef4444;
+}
+
+.sync-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
   margin-top: 1rem;
+}
+
+.sync-btn.spinning svg {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 .logout-btn:hover {

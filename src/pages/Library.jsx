@@ -24,10 +24,11 @@ function Library() {
   const { addToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const initialFilter = searchParams.get('genre') || 'All';
+  const initialSearch = searchParams.get('search') || '';
   
   const [activeFilter, setActiveFilter] = useState(initialFilter);
   const [activeCollection, setActiveCollection] = useState('All');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [isScanning, setIsScanning] = useState(false);
   const [sortBy, setSortBy] = useState('added-desc');
   const [viewMode, setViewMode] = useState('grid');
@@ -93,7 +94,7 @@ function Library() {
     });
 
     return result;
-  }, [books, activeFilter, searchQuery, sortBy]);
+  }, [books, activeFilter, activeCollection, searchQuery, sortBy]);
 
   const handleRescan = async () => {
     if (dirHandle && !isScanning) {

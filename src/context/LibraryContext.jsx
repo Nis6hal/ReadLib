@@ -106,12 +106,16 @@ export function LibraryProvider({ children }) {
 
     const currentBooks = await getAllBooks();
     const existingIds = new Set(currentBooks.map(b => b.id));
-    let newBooks = [...currentBooks];
+    const foundIds = new Set();
+    let newBooksList = [...currentBooks];
+    let addedCount = 0;
 
-    // Scan for PDFs (shallow)
+    // Scan for PDFs
     for await (const entry of handle.values()) {
       if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
         const id = entry.name;
+        foundIds.add(id);
+        
         if (!existingIds.has(id)) {
           const title = entry.name
             .replace('.pdf', '')
@@ -131,16 +135,26 @@ export function LibraryProvider({ children }) {
             addedAt: new Date().toISOString(),
             cover: null,
             pageCount: 0,
+            isFavorite: false,
           };
           await saveBook(newBook);
-          newBooks.push(newBook);
+          newBooksList.push(newBook);
+          addedCount++;
         }
       }
     }
-    setBooks(newBooks);
 
-    // Enrich books with metadata + thumbnails in background
-    enrichBooks(newBooks);
+    // Identify books to remove
+    const booksToRemove = currentBooks.filter(b => !foundIds.has(b.id));
+    for (const book of booksToRemove) {
+      await deleteBookDB(book.id);
+      newBooksList = newBooksList.filter(b => b.id !== book.id);
+    }
+
+    setBooks(newBooksList);
+
+    // Enrich only new or un-enriched books
+    enrichBooks(newBooksList);
   };
 
   // Extract metadata and generate covers for books that need it
