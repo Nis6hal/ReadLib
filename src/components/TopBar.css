@@ -6,7 +6,9 @@
   margin-bottom: 0.5rem;
   gap: 1rem;
   min-height: 70px;
+  min-width: 0;
 }
+
 
 
 .top-nav {

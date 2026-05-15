@@ -215,7 +215,8 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex: 1;
   overflow: hidden;
-  min-height: 0; /* Important for nested flex scroll */
+  min-height: 0;
+  min-width: 0; /* Critical to allow shrinking */
 }
 
 .main-panel {
@@ -223,8 +224,15 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem 1.5rem;
-  min-width: 0; /* Prevents flex items from overflowing */
+  min-width: 0; /* Critical to allow shrinking */
 }
+
+.right-sidebar {
+  flex: 0 0 320px; /* Don't grow, don't shrink from 320px */
+  width: 320px;
+  min-width: 320px;
+}
+
 
 
 @media (max-width: 1200px) {
