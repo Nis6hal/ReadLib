@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, BookOpen, Library, User, Settings, Menu, X } from 'lucide-react';
-import './Sidebar.css';
-
 import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen } from 'lucide-react';
+import './Sidebar.css';
 
 function Sidebar() {
   const navItems = [
