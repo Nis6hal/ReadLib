@@ -196,7 +196,7 @@ h1, h2, h3, h4, h5, h6 {
 /* Layout */
 .app-container {
   display: flex;
-  width: 100%;
+  width: 100vw;
   height: 100vh;
   background-color: var(--bg-primary);
   overflow: hidden;
@@ -208,8 +208,10 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   background: var(--bg-primary);
-  overflow: hidden; /* Main content handles children, doesn't scroll itself */
+  overflow: hidden;
+  min-width: 0;
 }
+
 
 .content-wrapper {
   display: flex;

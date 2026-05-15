@@ -1,5 +1,6 @@
 .sidebar {
   width: 80px;
+  flex-shrink: 0;
   background-color: var(--bg-primary);
   display: flex;
   flex-direction: column;
@@ -8,6 +9,7 @@
   border-right: 1px solid var(--glass-border);
   height: 100%;
 }
+
 
 .sidebar-header {
   margin-bottom: 3rem;

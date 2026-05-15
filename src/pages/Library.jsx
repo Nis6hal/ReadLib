@@ -113,24 +113,25 @@ function Library() {
   };
 
   return (
-    <div className="library-page">
-      <div className="library-header fade-in">
-        <div className="header-main">
-          <h1>Library</h1>
+    <div className="library-page fade-in">
+      <div className="page-header">
+        <h1>{searchQuery ? `Search: ${searchQuery}` : activeFilter !== 'All' ? activeFilter : 'Library'}</h1>
+        <div className="header-actions-row">
           <div className="header-stats">
             <span>{books.length} Books</span>
             <span>{dirHandle?.name || 'No folder selected'}</span>
           </div>
-        </div>
-        <div className="header-actions">
-          <button className={`btn ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>
-            <RefreshCw size={16} /> Rescan
-          </button>
-          <button className="btn btn-primary" onClick={selectDirectory}>
-            <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Select Folder'}
-          </button>
+          <div className="header-buttons">
+            <button className={`btn btn-secondary ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>
+              <RefreshCw size={16} /> Rescan
+            </button>
+            <button className="btn btn-primary" onClick={selectDirectory}>
+              <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Select Folder'}
+            </button>
+          </div>
         </div>
       </div>
+
 
       <div className="library-controls fade-in fade-in-delay-1">
         <div className="search-bar">
