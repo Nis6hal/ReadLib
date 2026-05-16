@@ -17,9 +17,8 @@ function TopBar() {
   return (
     <div className="top-bar">
       <nav className="top-nav">
-        <NavLink to="/" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} end>Library</NavLink>
-        <NavLink to="/library" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>Books</NavLink>
-        <NavLink to="/library" className="nav-link">Authors</NavLink>
+        <NavLink to="/" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} end>Dashboard</NavLink>
+        <NavLink to="/library" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>Library</NavLink>
       </nav>
       
       <div className="search-container">

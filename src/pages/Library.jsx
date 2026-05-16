@@ -119,7 +119,11 @@ function Library() {
         <div className="header-actions-row">
           <div className="header-stats">
             <span>{books.length} Books</span>
-            <span>{dirHandle?.name || 'No folder selected'}</span>
+            {dirHandle ? (
+              <span className="badge badge-reading">{dirHandle.name}</span>
+            ) : (
+              <span>No folder selected</span>
+            )}
           </div>
           <div className="header-buttons">
             <button className={`btn btn-secondary ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>

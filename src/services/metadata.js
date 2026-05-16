@@ -27,9 +27,22 @@ export async function extractPdfMetadata(fileHandle) {
 
     pdf.destroy();
 
+    let title = cleanString(rawTitle);
+    let author = cleanString(rawAuthor);
+
+    if (!author && title.includes(' - ')) {
+      const parts = title.split(' - ');
+      if (parts.length >= 2) {
+        // Assume first part is Title, second is Author (most common).
+        // If it's the other way around, user can edit it.
+        title = parts.slice(0, -1).join(' - ').trim();
+        author = parts[parts.length - 1].trim();
+      }
+    }
+
     return {
-      title: cleanString(rawTitle),
-      author: cleanString(rawAuthor),
+      title,
+      author,
       subject: cleanString(subject),
       pageCount,
     };
