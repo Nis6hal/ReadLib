@@ -41,8 +41,10 @@ function getInitials(title) {
     .join('');
 }
 
-function BookCard({ book, viewMode = 'grid', variant = 'default' }) {
-  const { updateBook, deleteBook } = useLibrary();
+function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' }) {
+  const { updateBook, deleteBook, books } = useLibrary();
+  // Always use the live book from context so inline edits stay fresh
+  const book = books.find(b => b.id === initialBook.id) || initialBook;
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);

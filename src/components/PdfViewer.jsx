@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, StickyNote, X as CloseIcon } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useLibrary } from '../context/LibraryContext';
 import { verifyPermission } from '../services/db';
@@ -29,6 +29,9 @@ function PdfViewer() {
   const [readerTheme, setReaderTheme] = useState('light'); // 'light', 'sepia', 'night'
   const [pageInput, setPageInput] = useState('1');
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [showNotes, setShowNotes] = useState(false);
+  const [notesText, setNotesText] = useState('');
+  const [notesSaved, setNotesSaved] = useState(true);
   const renderingRef = useRef(false);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
@@ -50,6 +53,14 @@ function PdfViewer() {
   const decodedId = decodeURIComponent(id);
   const book = books.find(b => b.id === decodedId || b.id === id);
   bookRef.current = book;
+
+  // Sync notes text from book on first load
+  useEffect(() => {
+    if (book?.notes !== undefined && notesText === '') {
+      setNotesText(book.notes);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [book?.id]);
 
   // Load the PDF
   useEffect(() => {
@@ -304,7 +315,13 @@ function PdfViewer() {
           <span className="zoom-label">{Math.round(scale * 100)}%</span>
           <button className="btn btn-icon" onClick={zoomIn} title="Zoom in (+)"><ZoomIn size={16} /></button>
           <div className="toolbar-divider"></div>
-          <button className="btn btn-icon" onClick={toggleFullscreen} title="Fullscreen"><Maximize size={18} /></button>
+          <button
+            className={`btn btn-icon ${showNotes ? 'active' : ''}`}
+            onClick={() => setShowNotes(v => !v)}
+            title="Reading Notes"
+          >
+            <StickyNote size={18} />
+          </button>
           <div className="toolbar-divider"></div>
           <span className="reading-timer" title="Session reading time"><Timer size={13} /> {formatTime(sessionSeconds)}</span>
         </div>
@@ -314,17 +331,46 @@ function PdfViewer() {
         <div className="pdf-progress-fill" style={{ width: `${progressPercent}%` }}></div>
       </div>
 
-      {viewMode === 'single' ? (
-        <div className="pdf-canvas-wrapper single-view">
-          <canvas ref={canvasRef} className="pdf-canvas"></canvas>
+      <div className="pdf-content-area">
+        {viewMode === 'single' ? (
+          <div className="pdf-canvas-wrapper single-view">
+            <canvas ref={canvasRef} className="pdf-canvas"></canvas>
+          </div>
+        ) : (
+          <div className="pdf-vertical-container" ref={containerRef}>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
+              <PdfPageItem key={pageNum} pageNum={pageNum} renderPage={renderPage} scale={scale} />
+            ))}
+          </div>
+        )}
+
+        {/* Notes Side Panel */}
+        <div className={`pdf-notes-panel ${showNotes ? 'open' : ''}`}>
+          <div className="notes-panel-header">
+            <div className="notes-panel-title"><StickyNote size={16} /> Notes</div>
+            <button className="btn-icon" onClick={async () => {
+              if (book) await updateBook({ ...book, notes: notesText });
+              setNotesSaved(true);
+              setShowNotes(false);
+            }}>
+              <CloseIcon size={18} />
+            </button>
+          </div>
+          <textarea
+            className="notes-panel-textarea"
+            placeholder="Jot down your thoughts, quotes, or key ideas while reading..."
+            value={notesText}
+            onChange={e => { setNotesText(e.target.value); setNotesSaved(false); }}
+            onBlur={async () => {
+              if (book) await updateBook({ ...book, notes: notesText });
+              setNotesSaved(true);
+            }}
+          />
+          <div className="notes-panel-footer">
+            <span className="notes-save-status">{notesSaved ? '✓ Saved' : 'Unsaved...'}</span>
+          </div>
         </div>
-      ) : (
-        <div className="pdf-vertical-container" ref={containerRef}>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-            <PdfPageItem key={pageNum} pageNum={pageNum} renderPage={renderPage} scale={scale} />
-          ))}
-        </div>
-      )}
+      </div>
     </div>
   );
 }
