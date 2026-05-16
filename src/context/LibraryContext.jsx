@@ -16,6 +16,7 @@ export function LibraryProvider({ children }) {
   const [userName, setUserName] = useState('User');
   const [readingHistory, setReadingHistory] = useState({});
   const [yearlyGoal, setYearlyGoal] = useState(50);
+  const [collections, setCollections] = useState(['Favorites', 'Must Read', 'To Review']);
 
   // Load initial data
   useEffect(() => {
@@ -105,6 +106,29 @@ export function LibraryProvider({ children }) {
     if (text.includes('mystery') || text.includes('thriller') || text.includes('crime') || text.includes('detective') || text.includes('murder')) return 'Mystery Thriller';
     if (text.includes('novel') || text.includes('fiction') || text.includes('story')) return 'Novel';
     return 'Other';
+  };
+  
+  const fetchBookMetadata = async (title, author) => {
+    try {
+      const query = encodeURIComponent(`intitle:${title}${author ? '+inauthor:' + author : ''}`);
+      const response = await fetch(`https://www.googleapis.com/books/v1/volumes?q=${query}`);
+      const data = await response.json();
+      
+      if (data.items && data.items.length > 0) {
+        const info = data.items[0].volumeInfo;
+        return {
+          description: info.description || '',
+          cover: info.imageLinks?.thumbnail || info.imageLinks?.smallThumbnail || null,
+          publisher: info.publisher || '',
+          publishedDate: info.publishedDate || '',
+          pageCount: info.pageCount || 0,
+          genre: info.categories ? info.categories[0] : detectGenre(title, author)
+        };
+      }
+    } catch (err) {
+      console.warn('Failed to fetch metadata', err);
+    }
+    return null;
   };
 
   const toggleTheme = async () => {
@@ -312,6 +336,7 @@ export function LibraryProvider({ children }) {
       userName,
       readingHistory,
       yearlyGoal,
+      collections,
       stats,
       selectDirectory,
       scanDirectory,
@@ -322,7 +347,9 @@ export function LibraryProvider({ children }) {
       updateYearlyGoal,
       calculateStreak,
       logReadingSession,
-      addManualBook
+      addManualBook,
+      fetchBookMetadata,
+      setCollections
     }}>
       {children}
     </LibraryContext.Provider>

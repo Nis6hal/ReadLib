@@ -40,6 +40,7 @@ function Library() {
     { id: 'Favorites', label: '⭐ Favorites' },
     { id: 'Must Read', label: '📚 Must Read' },
     { id: 'Finished', label: '✅ Finished' },
+    ...GENRES.map(g => ({ id: g, label: g }))
   ];
 
   const filteredBooks = useMemo(() => {
@@ -109,13 +110,38 @@ function Library() {
     }
   };
 
+  const [isDragging, setIsDragging] = useState(false);
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = async (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.items.length > 0) {
+      addToast('Importing dropped files...', 'info');
+      setShowManualModal(true);
+    }
+  };
+
   const getFilterCount = (filter) => {
     if (filter === 'All') return books.length;
     return books.filter(b => b.genre === filter).length;
   };
 
   return (
-    <div className="library-page fade-in">
+    <div 
+      className={`library-page fade-in ${isDragging ? 'dragging' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="page-header">
         <h1>{searchQuery ? `Search: ${searchQuery}` : activeFilter !== 'All' ? activeFilter : 'Library'}</h1>
         <div className="header-actions-row">

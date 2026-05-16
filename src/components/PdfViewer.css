@@ -317,22 +317,7 @@
     scale: 0.9;
   }
 
-  .pdf-notes-panel {
-    width: 100%;
-    height: 50vh;
-    top: auto;
-    bottom: 0;
-    border-left: none;
-    border-top: 1px solid var(--glass-border);
-    transform: translateY(100%);
-  }
-
-  .pdf-notes-panel.open {
-    transform: translateY(0);
-  }
-}
-
-/* Content area — wraps canvas + notes panel side by side */
+/* Content area — wraps canvas + side panels */
 .pdf-content-area {
   flex: 1;
   display: flex;
@@ -341,8 +326,8 @@
   min-height: 0;
 }
 
-/* Notes Side Panel */
-.pdf-notes-panel {
+/* Side Panels (TOC, Search, Notes) */
+.pdf-side-panel {
   position: absolute;
   top: 0;
   right: 0;
@@ -358,11 +343,11 @@
   box-shadow: -4px 0 24px rgba(0,0,0,0.3);
 }
 
-.pdf-notes-panel.open {
+.pdf-side-panel.open {
   transform: translateX(0);
 }
 
-.notes-panel-header {
+.panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -371,17 +356,125 @@
   flex-shrink: 0;
 }
 
-.notes-panel-title {
+.panel-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: var(--text-primary);
 }
 
-.notes-panel-textarea {
+.panel-content {
   flex: 1;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.panel-footer {
+  padding: 0.75rem 1.25rem;
+  border-top: 1px solid var(--glass-border);
+  flex-shrink: 0;
+}
+
+/* TOC List */
+.toc-list {
+  list-style: none;
+  padding: 0.5rem 0;
+}
+
+.toc-list li {
+  padding: 0.75rem 1.25rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.toc-list li:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border-left-color: var(--accent-primary);
+}
+
+/* Search Panel */
+.search-input-wrapper {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  padding: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  z-index: 5;
+}
+
+.search-input-wrapper .search-icon {
+  position: absolute;
+  left: 1.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+}
+
+.search-input-wrapper input {
+  width: 100%;
+  padding: 0.6rem 1rem 0.6rem 2.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--glass-border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.search-input-wrapper input:focus {
+  border-color: var(--accent-primary);
+}
+
+.search-results {
+  padding: 0.5rem 0;
+}
+
+.search-result-item {
+  padding: 1rem 1.25rem;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.2s;
+}
+
+.search-result-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.res-page {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+  margin-bottom: 0.35rem;
+}
+
+.res-snippet {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.empty-msg {
+  padding: 2rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 0.88rem;
+}
+
+/* Notes Panel Specific */
+.notes-panel-textarea {
+  width: 100%;
+  height: 100%;
   resize: none;
   background: transparent;
   border: none;
@@ -393,18 +486,55 @@
   outline: none;
 }
 
-.notes-panel-textarea::placeholder {
-  color: var(--text-muted);
-  opacity: 0.7;
+@media (max-width: 768px) {
+  .pdf-side-panel {
+    width: 100%;
+    height: 60vh;
+    top: auto;
+    bottom: 0;
+    border-left: none;
+    border-top: 1px solid var(--glass-border);
+    transform: translateY(100%);
+  }
+
+  .pdf-side-panel.open {
+    transform: translateY(0);
+    transform: translateX(0);
+  }
 }
 
-.notes-panel-footer {
-  padding: 0.75rem 1.25rem;
-  border-top: 1px solid var(--glass-border);
-  flex-shrink: 0;
+/* Text Layer for Selection */
+.pdf-page-container {
+  position: relative;
+  display: inline-block;
+  box-shadow: var(--shadow-md);
+  background: white;
 }
 
-.notes-save-status {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+.text-layer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  opacity: 1;
+  line-height: 1.0;
+  pointer-events: auto;
+}
+
+.text-layer > span {
+  color: transparent;
+  position: absolute;
+  white-space: pre;
+  cursor: text;
+  transform-origin: 0% 0%;
+}
+
+.text-layer ::selection {
+  background: rgba(99, 102, 241, 0.3);
+}
+
+.reader-theme-night .pdf-page-container {
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }

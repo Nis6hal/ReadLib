@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, StickyNote, X as CloseIcon } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, StickyNote, X as CloseIcon, List, Search, Menu } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useLibrary } from '../context/LibraryContext';
 import { verifyPermission } from '../services/db';
@@ -17,6 +17,7 @@ function PdfViewer() {
   const navigate = useNavigate();
   const { books, updateBook, logReadingSession } = useLibrary();
   const canvasRef = useRef(null);
+  const textLayerRef = useRef(null);
   const containerRef = useRef(null);
 
   const [pdfDoc, setPdfDoc] = useState(null);
@@ -31,6 +32,11 @@ function PdfViewer() {
   const [pageInput, setPageInput] = useState('1');
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const [showNotes, setShowNotes] = useState(false);
+  const [showTOC, setShowTOC] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [outline, setOutline] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
   const [notesText, setNotesText] = useState('');
   const [notesSaved, setNotesSaved] = useState(true);
   const renderingRef = useRef(false);
@@ -104,6 +110,14 @@ function PdfViewer() {
           lastLoggedPage.current = savedPage;
           setLoading(false);
           
+          // Get Outline (TOC)
+          try {
+            const pdfOutline = await pdf.getOutline();
+            setOutline(pdfOutline || []);
+          } catch (e) {
+            console.warn('Could not fetch PDF outline');
+          }
+
           // Auto-fit to width on mobile
           if (window.innerWidth < 768) {
             setTimeout(fitToWidth, 300);
@@ -123,7 +137,7 @@ function PdfViewer() {
   }, [book?.id]);
 
   // Render a page
-  const renderPage = useCallback(async (pageNum, canvas, isList = false) => {
+  const renderPage = useCallback(async (pageNum, canvas, isList = false, textLayerDiv = null) => {
     if (!pdfDoc || !canvas) return;
 
     try {
@@ -142,6 +156,23 @@ function PdfViewer() {
         canvasContext: context,
         viewport: viewport,
       }).promise;
+
+      // Render text layer
+      if (textLayerDiv) {
+        textLayerDiv.innerHTML = '';
+        textLayerDiv.style.width = `${viewport.width}px`;
+        textLayerDiv.style.height = `${viewport.height}px`;
+        textLayerDiv.style.left = canvas.offsetLeft + 'px';
+        textLayerDiv.style.top = canvas.offsetTop + 'px';
+        
+        const textContent = await page.getTextContent();
+        const textLayer = new pdfjsLib.TextLayer({
+          textContentSource: textContent,
+          container: textLayerDiv,
+          viewport: viewport,
+        });
+        await textLayer.render();
+      }
     } catch (err) {
       console.error('Error rendering page:', err);
     }
@@ -149,7 +180,7 @@ function PdfViewer() {
 
   useEffect(() => {
     if (viewMode === 'single' && !loading && pdfDoc) {
-      renderPage(currentPage, canvasRef.current);
+      renderPage(currentPage, canvasRef.current, false, textLayerRef.current);
     }
   }, [pdfDoc, currentPage, scale, viewMode, loading, renderPage]);
 
@@ -233,6 +264,34 @@ function PdfViewer() {
   const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
   const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
   
+  const handleSearch = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (!query || query.length < 3 || !pdfDoc) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const results = [];
+    // Search first 200 pages for performance balance
+    const limit = Math.min(totalPages, 200);
+    for (let i = 1; i <= limit; i++) {
+      const page = await pdfDoc.getPage(i);
+      const textContent = await page.getTextContent();
+      const text = textContent.items.map(item => item.str).join(' ');
+      if (text.toLowerCase().includes(query.toLowerCase())) {
+        results.push({ 
+          page: i, 
+          snippet: text.toLowerCase().split(query.toLowerCase())[0].slice(-30) + 
+                   query + 
+                   text.toLowerCase().split(query.toLowerCase())[1].slice(0, 30)
+        });
+        if (results.length > 20) break; // Limit results
+      }
+    }
+    setSearchResults(results);
+  };
+
   const fitToWidth = useCallback(async () => {
     if (!pdfDoc) return;
     try {
@@ -435,6 +494,11 @@ function PdfViewer() {
 
         <div className="pdf-toolbar-right">
           <div className="toolbar-group">
+            <button className={`btn btn-icon ${showTOC ? 'active' : ''}`} onClick={() => { setShowTOC(!showTOC); setShowSearch(false); setShowNotes(false); }} title="Table of Contents"><Menu size={18} /></button>
+            <button className={`btn btn-icon ${showSearch ? 'active' : ''}`} onClick={() => { setShowSearch(!showSearch); setShowTOC(false); setShowNotes(false); }} title="Search"><Search size={18} /></button>
+          </div>
+          <div className="toolbar-divider"></div>
+          <div className="toolbar-group">
             <button className={`btn btn-icon ${viewMode === 'single' ? 'active' : ''}`} onClick={() => setViewMode('single')} title="Single Page"><Layout size={18} /></button>
             <button className={`btn btn-icon ${viewMode === 'vertical' ? 'active' : ''}`} onClick={() => setViewMode('vertical')} title="Vertical Scroll"><Scroll size={18} /></button>
           </div>
@@ -471,7 +535,10 @@ function PdfViewer() {
       <div className="pdf-content-area">
         {viewMode === 'single' ? (
           <div className="pdf-canvas-wrapper single-view" onClick={handleCanvasClick}>
-            <canvas ref={canvasRef} className="pdf-canvas"></canvas>
+            <div className="pdf-page-container">
+              <canvas ref={canvasRef} className="pdf-canvas"></canvas>
+              <div ref={textLayerRef} className="text-layer"></div>
+            </div>
           </div>
         ) : (
           <div className="pdf-vertical-container" ref={containerRef}>
@@ -487,10 +554,72 @@ function PdfViewer() {
           </div>
         )}
 
+        {/* TOC Side Panel */}
+        <div className={`pdf-side-panel toc-panel ${showTOC ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3>Table of Contents</h3>
+            <button className="btn-icon" onClick={() => setShowTOC(false)}><CloseIcon size={18} /></button>
+          </div>
+          <div className="panel-content">
+            {outline.length > 0 ? (
+              <ul className="toc-list">
+                {outline.map((item, i) => (
+                  <li key={i} onClick={async () => {
+                    if (typeof item.dest === 'string') {
+                      // Handle named destinations if needed
+                    } else if (Array.isArray(item.dest)) {
+                      const pageIndex = await pdfDoc.getPageIndex(item.dest[0]);
+                      jumpToPage(pageIndex + 1);
+                    }
+                  }}>
+                    {item.title}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-msg">No bookmarks found in this PDF.</p>
+            )}
+          </div>
+        </div>
+
+        {/* Search Side Panel */}
+        <div className={`pdf-side-panel search-panel ${showSearch ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3>Search</h3>
+            <button className="btn-icon" onClick={() => setShowSearch(false)}><CloseIcon size={18} /></button>
+          </div>
+          <div className="panel-content">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Find in document..." 
+                value={searchQuery}
+                onChange={handleSearch}
+                autoFocus
+              />
+            </div>
+            <div className="search-results">
+              {searchResults.length > 0 ? (
+                searchResults.map((res, i) => (
+                  <div key={i} className="search-result-item" onClick={() => jumpToPage(res.page)}>
+                    <div className="res-page">Page {res.page}</div>
+                    <div className="res-snippet">...{res.snippet}...</div>
+                  </div>
+                ))
+              ) : searchQuery.length >= 3 ? (
+                <p className="empty-msg">No results found.</p>
+              ) : (
+                <p className="empty-msg">Type at least 3 characters to search.</p>
+              )}
+            </div>
+          </div>
+        </div>
+
         {/* Notes Side Panel */}
-        <div className={`pdf-notes-panel ${showNotes ? 'open' : ''}`}>
-          <div className="notes-panel-header">
-            <div className="notes-panel-title"><StickyNote size={16} /> Notes</div>
+        <div className={`pdf-side-panel notes-panel ${showNotes ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3><StickyNote size={16} /> Notes</h3>
             <button className="btn-icon" onClick={async () => {
               if (book) await updateBook({ ...book, notes: notesText });
               setNotesSaved(true);
@@ -499,17 +628,19 @@ function PdfViewer() {
               <CloseIcon size={18} />
             </button>
           </div>
-          <textarea
-            className="notes-panel-textarea"
-            placeholder="Jot down your thoughts, quotes, or key ideas while reading..."
-            value={notesText}
-            onChange={e => { setNotesText(e.target.value); setNotesSaved(false); }}
-            onBlur={async () => {
-              if (book) await updateBook({ ...book, notes: notesText });
-              setNotesSaved(true);
-            }}
-          />
-          <div className="notes-panel-footer">
+          <div className="panel-content">
+            <textarea
+              className="notes-panel-textarea"
+              placeholder="Jot down your thoughts, quotes, or key ideas while reading..."
+              value={notesText}
+              onChange={e => { setNotesText(e.target.value); setNotesSaved(false); }}
+              onBlur={async () => {
+                if (book) await updateBook({ ...book, notes: notesText });
+                setNotesSaved(true);
+              }}
+            />
+          </div>
+          <div className="panel-footer">
             <span className="notes-save-status">{notesSaved ? '✓ Saved' : 'Unsaved...'}</span>
           </div>
         </div>
@@ -520,6 +651,7 @@ function PdfViewer() {
 
 function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
   const canvasRef = useRef(null);
+  const textLayerRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
 
   // Calculate placeholder height based on scale and original dimensions
@@ -537,7 +669,7 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
 
   useEffect(() => {
     if (isVisible && canvasRef.current) {
-      renderPage(pageNum, canvasRef.current, true);
+      renderPage(pageNum, canvasRef.current, true, textLayerRef.current);
     }
   }, [isVisible, pageNum, scale, renderPage]);
 
@@ -549,18 +681,22 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
         minHeight: `${placeholderHeight}px`,
         width: '100%',
         display: 'flex',
-        justifyContent: 'center'
+        justifyContent: 'center',
+        position: 'relative'
       }}
     >
-      <canvas 
-        ref={canvasRef} 
-        className="pdf-canvas"
-        style={{ 
-          width: isVisible ? undefined : `${placeholderWidth}px`,
-          height: isVisible ? undefined : `${placeholderHeight}px`,
-          visibility: isVisible ? 'visible' : 'hidden'
-        }}
-      ></canvas>
+      <div className="pdf-page-container" style={{ position: 'relative' }}>
+        <canvas 
+          ref={canvasRef} 
+          className="pdf-canvas"
+          style={{ 
+            width: isVisible ? undefined : `${placeholderWidth}px`,
+            height: isVisible ? undefined : `${placeholderHeight}px`,
+            visibility: isVisible ? 'visible' : 'hidden'
+          }}
+        ></canvas>
+        <div ref={textLayerRef} className="text-layer"></div>
+      </div>
       <div className="page-number-hint">{pageNum}</div>
     </div>
   );
