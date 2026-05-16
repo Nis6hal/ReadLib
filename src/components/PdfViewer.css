@@ -216,6 +216,12 @@
   pointer-events: auto;
 }
 
+@media (min-width: 501px) and (max-width: 900px) {
+  .pdf-side-panel {
+    width: 260px;
+  }
+}
+
 .panel-header {
   display: flex;
   align-items: center;
@@ -400,7 +406,7 @@
 }
 
 /* Mobile Responsiveness */
-@media (max-width: 768px) {
+@media (max-width: 500px) {
   .pdf-viewer-container {
     z-index: 2000;
   }
@@ -454,7 +460,7 @@
     left: 0;
     right: 0;
     width: 100% !important;
-    height: 70vh !important;
+    height: 50vh !important;
     border-left: none;
     border-top: 1px solid var(--glass-border);
     transform: translateY(100%);

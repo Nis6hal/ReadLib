@@ -24,7 +24,7 @@ function PdfViewer() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
   const [pageDimensions, setPageDimensions] = useState({ width: 600, height: 800 });
-  const [scale, setScale] = useState(window.innerWidth < 768 ? 0.8 : 1.2);
+  const [scale, setScale] = useState(window.innerWidth < 500 ? 0.8 : 1.2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('single'); // 'single' or 'vertical'
@@ -97,7 +97,7 @@ function PdfViewer() {
           setPageInput(savedPage.toString());
           lastLoggedPage.current = savedPage;
           setLoading(false);
-          if (window.innerWidth < 768) {
+          if (window.innerWidth < 500) {
             setTimeout(fitToWidth, 300);
           }
         }
