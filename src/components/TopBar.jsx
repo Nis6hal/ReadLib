@@ -1,21 +1,12 @@
-import React, { useState } from 'react';
-import { Search, Sun, Moon, RefreshCw } from 'lucide-react';
+import React from 'react';
+import { Search, Sun, Moon, Github } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { useLibrary } from '../context/LibraryContext';
 import './TopBar.css';
 
 
 function TopBar() {
-  const { userName, theme, toggleTheme, dirHandle, scanDirectory } = useLibrary();
-  const [isScanning, setIsScanning] = useState(false);
-
-  const handleRescan = async () => {
-    if (dirHandle && !isScanning) {
-      setIsScanning(true);
-      await scanDirectory(dirHandle);
-      setIsScanning(false);
-    }
-  };
+  const { userName, theme, toggleTheme } = useLibrary();
   
   const initials = userName
     .split(' ')
@@ -36,9 +27,9 @@ function TopBar() {
       </div>
       
       <div className="top-actions">
-        <button className="icon-btn" onClick={handleRescan} disabled={!dirHandle || isScanning} title="Rescan Library">
-          <RefreshCw size={20} className={isScanning ? 'spinning' : ''} />
-        </button>
+        <a href="https://github.com/nis6hal/ReadLib" target="_blank" rel="noopener noreferrer" className="icon-btn" title="View Source on GitHub">
+          <Github size={20} />
+        </a>
         <button className="icon-btn" onClick={toggleTheme} title="Toggle Theme">
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
