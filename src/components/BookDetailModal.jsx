@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Play, X, Star, Bookmark, BookOpen, CheckCircle, Upload, Edit2, Check, StickyNote, Sparkles } from 'lucide-react';
+import { Play, X, Star, Bookmark, BookOpen, CheckCircle, Upload, Edit2, Check, Sparkles } from 'lucide-react';
 import { useLibrary, GENRES } from '../context/LibraryContext';
 import { useToast } from './Toast';
 import './BookDetailModal.css';
@@ -48,9 +48,7 @@ function BookDetailModal({ book, onClose }) {
   const [draftTitle, setDraftTitle] = useState(book.title);
   const [draftAuthor, setDraftAuthor] = useState(book.author);
 
-  // Notes state
-  const [notes, setNotes] = useState(book.notes || '');
-  const [notesSaved, setNotesSaved] = useState(true);
+
 
   const handleClose = () => {
     setIsClosing(true);
@@ -97,10 +95,7 @@ function BookDetailModal({ book, onClose }) {
     setEditingAuthor(false);
   };
 
-  const saveNotes = async () => {
-    await updateBook({ ...book, notes });
-    setNotesSaved(true);
-  };
+
 
   const handleCoverUpload = (e) => {
     const file = e.target.files[0];
@@ -124,7 +119,6 @@ function BookDetailModal({ book, onClose }) {
 
   const tabs = [
     { id: 'info', label: 'Info', icon: <BookOpen size={14} /> },
-    { id: 'notes', label: 'Notes', icon: <StickyNote size={14} /> },
     { id: 'similar', label: 'Similar', icon: <Sparkles size={14} /> },
   ];
 
@@ -270,20 +264,7 @@ function BookDetailModal({ book, onClose }) {
               </div>
             )}
 
-            {/* Tab: Notes */}
-            {activeTab === 'notes' && (
-              <div className="tab-panel notes-panel">
-                <p className="notes-hint">Your personal notes about this book. Auto-saved when you leave.</p>
-                <textarea
-                  className="notes-textarea"
-                  placeholder="Write your thoughts, quotes, or key takeaways here..."
-                  value={notes}
-                  onChange={e => { setNotes(e.target.value); setNotesSaved(false); }}
-                  onBlur={saveNotes}
-                />
-                <span className="notes-status">{notesSaved ? '✓ Saved' : 'Unsaved changes...'}</span>
-              </div>
-            )}
+
 
             {/* Tab: Similar */}
             {activeTab === 'similar' && (
