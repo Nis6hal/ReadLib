@@ -170,9 +170,9 @@ function PdfViewer() {
 
   const goToPrev = useCallback(() => setCurrentPage(p => Math.max(1, p - 1)), []);
   const goToNext = useCallback(() => setCurrentPage(p => Math.min(totalPages, p + 1)), [totalPages]);
-  const zoomIn = () => setScale(s => Math.min(3, +(s + 0.2).toFixed(1)));
-  const zoomOut = () => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)));
-  const resetZoom = () => setScale(1.2);
+  const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
+  const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
+  const resetZoom = useCallback(() => setScale(1.2), []);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -182,29 +182,81 @@ function PdfViewer() {
     }
   };
 
-  // Keyboard navigation
+  // Keyboard navigation — mode-aware
   useEffect(() => {
     const handleKey = (e) => {
-      // Ignore if user is typing in an input
+      // Ignore if user is typing in an input or textarea
       if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
 
-      if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
-        e.preventDefault();
-        goToPrev();
+      if (viewMode === 'single') {
+        // Single-page mode:
+        //   Left / Right  → flip pages
+        //   Up / Down     → scroll the canvas wrapper
+        //   Space         → next page
+        switch (e.key) {
+          case 'ArrowLeft':
+            e.preventDefault();
+            goToPrev();
+            break;
+          case 'ArrowRight':
+          case ' ':
+            e.preventDefault();
+            goToNext();
+            break;
+          case 'ArrowUp': {
+            e.preventDefault();
+            const wrapper = document.querySelector('.pdf-canvas-wrapper');
+            if (wrapper) wrapper.scrollBy({ top: -120, behavior: 'smooth' });
+            break;
+          }
+          case 'ArrowDown': {
+            e.preventDefault();
+            const wrapper = document.querySelector('.pdf-canvas-wrapper');
+            if (wrapper) wrapper.scrollBy({ top: 120, behavior: 'smooth' });
+            break;
+          }
+          default: break;
+        }
+      } else {
+        // Vertical scroll mode:
+        //   Up / Down     → scroll document (large step)
+        //   Left / Right  → jump to prev/next page anchor
+        //   Space         → scroll down
+        switch (e.key) {
+          case 'ArrowUp': {
+            e.preventDefault();
+            const container = document.querySelector('.pdf-vertical-container');
+            if (container) container.scrollBy({ top: -200, behavior: 'smooth' });
+            break;
+          }
+          case 'ArrowDown':
+          case ' ': {
+            e.preventDefault();
+            const container = document.querySelector('.pdf-vertical-container');
+            if (container) container.scrollBy({ top: 200, behavior: 'smooth' });
+            break;
+          }
+          case 'ArrowLeft':
+            e.preventDefault();
+            goToPrev();
+            break;
+          case 'ArrowRight':
+            e.preventDefault();
+            goToNext();
+            break;
+          default: break;
+        }
       }
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') {
-        e.preventDefault();
-        goToNext();
-      }
-      if (e.key === 'Escape') {
-        navigate(-1);
-      }
+
+      // Shared shortcuts regardless of mode
+      if (e.key === 'Escape') navigate(-1);
       if (e.key === '+' || e.key === '=') zoomIn();
       if (e.key === '-') zoomOut();
     };
+
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [goToPrev, goToNext, navigate]);
+  }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut]);
 
   // Vertical Scroll Observer
   useEffect(() => {
