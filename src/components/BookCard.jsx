@@ -59,6 +59,11 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
 
   const handleRead = (e) => {
     e?.stopPropagation();
+    if (book.isManual) {
+      addToast('This is a manual entry. No file linked.', 'info');
+      setShowModal(true);
+      return;
+    }
     navigate(`/read/${encodeURIComponent(book.id)}`);
   };
 

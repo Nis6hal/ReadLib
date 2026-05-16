@@ -1,9 +1,10 @@
 import React, { useState, useMemo } from 'react';
-import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, LayoutGrid, List } from 'lucide-react';
+import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, LayoutGrid, List, Plus } from 'lucide-react';
 import { useLibrary, GENRES } from '../context/LibraryContext';
 import { useToast } from '../components/Toast';
 import BookCard from '../components/BookCard';
 import { BookCardSkeleton } from '../components/Skeleton';
+import AddManualBookModal from '../components/AddManualBookModal';
 import '../App.css';
 import './Library.css';
 import { useSearchParams } from 'react-router-dom';
@@ -29,6 +30,7 @@ function Library() {
   const [activeCollection, setActiveCollection] = useState('All');
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [isScanning, setIsScanning] = useState(false);
+  const [showManualModal, setShowManualModal] = useState(false);
   const [sortBy, setSortBy] = useState('added-desc');
   const [viewMode, setViewMode] = useState('grid');
 
@@ -126,6 +128,9 @@ function Library() {
             )}
           </div>
           <div className="header-buttons">
+            <button className="btn btn-secondary" onClick={() => setShowManualModal(true)}>
+              <Plus size={16} /> Manual Entry
+            </button>
             <button className={`btn btn-secondary ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>
               <RefreshCw size={16} /> Rescan
             </button>
@@ -135,6 +140,8 @@ function Library() {
           </div>
         </div>
       </div>
+
+      {showManualModal && <AddManualBookModal onClose={() => setShowManualModal(false)} />}
 
 
       <div className="library-controls fade-in fade-in-delay-1">

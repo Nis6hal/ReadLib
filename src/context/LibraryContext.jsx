@@ -73,11 +73,6 @@ export function LibraryProvider({ children }) {
     await setSetting('userName', name);
   };
 
-  const updateYearlyGoal = async (goal) => {
-    setYearlyGoal(goal);
-    await setSetting('yearlyGoal', goal);
-  };
-
   const calculateStreak = () => {
     if (!readingHistory || Object.keys(readingHistory).length === 0) return 0;
     
@@ -191,8 +186,8 @@ export function LibraryProvider({ children }) {
       }
     }
 
-    // Identify books to remove
-    const booksToRemove = currentBooks.filter(b => !foundIds.has(b.id));
+    // Identify books to remove (only if they are NOT manual entries)
+    const booksToRemove = currentBooks.filter(b => !b.isManual && !foundIds.has(b.id));
     for (const book of booksToRemove) {
       await deleteBookDB(book.id);
       newBooksList = newBooksList.filter(b => b.id !== book.id);
@@ -281,6 +276,33 @@ export function LibraryProvider({ children }) {
     completed: books.filter(b => b.category === 'Completed').length,
   };
 
+  const updateYearlyGoal = async (goal) => {
+    setYearlyGoal(goal);
+    await setSetting('yearlyGoal', goal);
+  };
+
+  const addManualBook = async (bookData) => {
+    const newBook = {
+      id: `manual-${Date.now()}`,
+      title: bookData.title || 'Untitled',
+      author: bookData.author || 'Unknown Author',
+      fileHandle: null,
+      category: bookData.category || 'Planned',
+      genre: bookData.genre || 'Other',
+      progress: bookData.category === 'Completed' ? 100 : 0,
+      lastRead: bookData.category === 'Completed' ? new Date().toISOString() : null,
+      addedAt: new Date().toISOString(),
+      cover: bookData.cover || null,
+      pageCount: 0,
+      isFavorite: false,
+      isManual: true,
+      notes: bookData.notes || '',
+    };
+    await saveBook(newBook);
+    setBooks(prev => [...prev, newBook]);
+    return newBook;
+  };
+
   return (
     <LibraryContext.Provider value={{
       books,
@@ -299,7 +321,8 @@ export function LibraryProvider({ children }) {
       updateUserName,
       updateYearlyGoal,
       calculateStreak,
-      logReadingSession
+      logReadingSession,
+      addManualBook
     }}>
       {children}
     </LibraryContext.Provider>
