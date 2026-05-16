@@ -1,12 +1,26 @@
 import React from 'react';
-import { Search, Sun, Moon, Github } from 'lucide-react';
-import { NavLink } from 'react-router-dom';
+import { Search, Sun, Moon, Dices } from 'lucide-react';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useLibrary } from '../context/LibraryContext';
+import { useToast } from './Toast';
 import './TopBar.css';
 
 
 function TopBar() {
-  const { userName, theme, toggleTheme } = useLibrary();
+  const { userName, theme, toggleTheme, books } = useLibrary();
+  const { addToast } = useToast();
+  const navigate = useNavigate();
+
+  const handleRoulette = () => {
+    if (!books || books.length === 0) {
+      addToast("Add some books first to play Book Roulette! 🎲", 'info');
+      return;
+    }
+    const randomIndex = Math.floor(Math.random() * books.length);
+    const randomBook = books[randomIndex];
+    addToast(`The universe chose: ${randomBook.title} 🎲`, 'success');
+    navigate(`/read/${encodeURIComponent(randomBook.id)}`);
+  };
   
   const initials = userName
     .split(' ')
@@ -27,9 +41,9 @@ function TopBar() {
       </div>
       
       <div className="top-actions">
-        <a href="https://github.com/nis6hal/ReadLib" target="_blank" rel="noopener noreferrer" className="icon-btn" title="View Source on GitHub">
-          <Github size={20} />
-        </a>
+        <button className="icon-btn" onClick={handleRoulette} title="Book Roulette 🎲">
+          <Dices size={20} />
+        </button>
         <button className="icon-btn" onClick={toggleTheme} title="Toggle Theme">
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
         </button>
