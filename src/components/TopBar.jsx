@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Sun, Moon, Dices } from 'lucide-react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useLibrary } from '../context/LibraryContext';
 import { useToast } from './Toast';
 import './TopBar.css';
@@ -10,7 +10,11 @@ function TopBar() {
   const { userName, theme, toggleTheme, books } = useLibrary();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [searchInput, setSearchInput] = useState('');
+
+  // Hide TopBar in reading mode
+  if (location.pathname.startsWith('/read/')) return null;
 
   const handleRoulette = () => {
     if (!books || books.length === 0) {

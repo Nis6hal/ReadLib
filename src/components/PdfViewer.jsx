@@ -272,24 +272,27 @@ function PdfViewer() {
       return;
     }
     
-    const results = [];
-    // Search first 200 pages for performance balance
-    const limit = Math.min(totalPages, 200);
-    for (let i = 1; i <= limit; i++) {
-      const page = await pdfDoc.getPage(i);
-      const textContent = await page.getTextContent();
-      const text = textContent.items.map(item => item.str).join(' ');
-      if (text.toLowerCase().includes(query.toLowerCase())) {
-        results.push({ 
-          page: i, 
-          snippet: text.toLowerCase().split(query.toLowerCase())[0].slice(-30) + 
-                   query + 
-                   text.toLowerCase().split(query.toLowerCase())[1].slice(0, 30)
-        });
-        if (results.length > 20) break; // Limit results
+    // Use a small delay to prevent UI freezing on every keystroke
+    if (window.searchTimeout) clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(async () => {
+      const results = [];
+      const limit = Math.min(totalPages, 150); // Search up to 150 pages
+      for (let i = 1; i <= limit; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map(item => item.str).join(' ');
+        if (text.toLowerCase().includes(query.toLowerCase())) {
+          results.push({ 
+            page: i, 
+            snippet: text.toLowerCase().split(query.toLowerCase())[0].slice(-30) + 
+                     query + 
+                     text.toLowerCase().split(query.toLowerCase())[1].slice(0, 30)
+          });
+          if (results.length > 15) break; 
+        }
       }
-    }
-    setSearchResults(results);
+      setSearchResults(results);
+    }, 400);
   };
 
   const fitToWidth = useCallback(async () => {
@@ -518,7 +521,11 @@ function PdfViewer() {
           <div className="toolbar-divider"></div>
           <button
             className={`btn btn-icon ${showNotes ? 'active' : ''}`}
-            onClick={() => setShowNotes(v => !v)}
+            onClick={() => {
+              setShowNotes(!showNotes);
+              setShowTOC(false);
+              setShowSearch(false);
+            }}
             title="Reading Notes"
           >
             <StickyNote size={18} />
