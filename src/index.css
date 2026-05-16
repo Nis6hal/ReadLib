@@ -251,11 +251,18 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   .main-panel {
     padding: 1rem;
-    padding-bottom: 75px; /* Add space for bottom nav */
+    /* Pad enough for the fixed bottom nav (65px) plus the device's safe area inset */
+    padding-bottom: calc(75px + env(safe-area-inset-bottom));
   }
   
   .app-container {
-    flex-direction: column;
+    flex-direction: row; /* keep sidebar side-by-side logic working */
+    position: relative;
+  }
+
+  .main-content {
+    flex: 1;
+    min-width: 0;
   }
   
   .content-wrapper {

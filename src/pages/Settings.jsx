@@ -101,6 +101,11 @@ function Settings() {
             </button>
           )}
         </div>
+        {!window.showDirectoryPicker && (
+          <div className="compat-warning">
+            ⚠️ Folder selection requires a Chromium-based browser (Chrome, Edge, Brave). Firefox and iOS Safari are not supported.
+          </div>
+        )}
       </div>
 
       {/* Theme */}

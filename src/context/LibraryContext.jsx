@@ -120,6 +120,16 @@ export function LibraryProvider({ children }) {
   };
 
   const selectDirectory = async () => {
+    // Check for File System Access API support first
+    if (!window.showDirectoryPicker) {
+      // This API is not supported on Firefox, iOS Safari, or older Android WebViews
+      alert(
+        'Your browser does not support folder selection.\n\n' +
+        'Please use a Chromium-based browser (Chrome, Edge, Brave, Samsung Internet) on desktop or Android.\n\n' +
+        'Note: iOS Safari and Firefox do not support this feature.'
+      );
+      return;
+    }
     try {
       const handle = await window.showDirectoryPicker();
       await setSetting('libraryDir', handle);
