@@ -22,6 +22,7 @@ function PdfViewer() {
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
+  const [pageDimensions, setPageDimensions] = useState({ width: 600, height: 800 });
   const [scale, setScale] = useState(window.innerWidth < 768 ? 0.8 : 1.2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -88,6 +89,11 @@ function PdfViewer() {
         if (!cancelled) {
           setPdfDoc(pdf);
           setTotalPages(pdf.numPages);
+          
+          // Get first page dimensions for placeholders
+          const firstPage = await pdf.getPage(1);
+          const vp = firstPage.getViewport({ scale: 1 });
+          setPageDimensions({ width: vp.width, height: vp.height });
           
           // Restore last read page
           const savedPage = book.progress > 0 
@@ -443,7 +449,13 @@ function PdfViewer() {
         ) : (
           <div className="pdf-vertical-container" ref={containerRef}>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(pageNum => (
-              <PdfPageItem key={pageNum} pageNum={pageNum} renderPage={renderPage} scale={scale} />
+              <PdfPageItem 
+                key={pageNum} 
+                pageNum={pageNum} 
+                renderPage={renderPage} 
+                scale={scale} 
+                dimensions={pageDimensions}
+              />
             ))}
           </div>
         )}
@@ -479,14 +491,18 @@ function PdfViewer() {
   );
 }
 
-function PdfPageItem({ pageNum, renderPage, scale }) {
+function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
   const canvasRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
+
+  // Calculate placeholder height based on scale and original dimensions
+  const placeholderHeight = dimensions ? dimensions.height * scale : 800;
+  const placeholderWidth = dimensions ? dimensions.width * scale : 600;
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) setIsVisible(true);
-    }, { threshold: 0.1 });
+    }, { threshold: 0.05 });
 
     if (canvasRef.current) observer.observe(canvasRef.current);
     return () => observer.disconnect();
@@ -499,8 +515,25 @@ function PdfPageItem({ pageNum, renderPage, scale }) {
   }, [isVisible, pageNum, scale, renderPage]);
 
   return (
-    <div className="pdf-page-item" data-page={pageNum}>
-      <canvas ref={canvasRef} className="pdf-canvas"></canvas>
+    <div 
+      className="pdf-page-item" 
+      data-page={pageNum}
+      style={{ 
+        minHeight: `${placeholderHeight}px`,
+        width: '100%',
+        display: 'flex',
+        justifyContent: 'center'
+      }}
+    >
+      <canvas 
+        ref={canvasRef} 
+        className="pdf-canvas"
+        style={{ 
+          width: isVisible ? undefined : `${placeholderWidth}px`,
+          height: isVisible ? undefined : `${placeholderHeight}px`,
+          visibility: isVisible ? 'visible' : 'hidden'
+        }}
+      ></canvas>
       <div className="page-number-hint">{pageNum}</div>
     </div>
   );
