@@ -251,8 +251,8 @@ h1, h2, h3, h4, h5, h6 {
 @media (max-width: 768px) {
   .main-panel {
     padding: 1rem;
-    /* Pad enough for the fixed bottom nav (65px) plus the device's safe area inset */
-    padding-bottom: calc(75px + env(safe-area-inset-bottom));
+    /* Increase padding to ensure content is never hidden by the fixed bottom nav (65px height) */
+    padding-bottom: calc(100px + env(safe-area-inset-bottom));
   }
   
   .app-container {
