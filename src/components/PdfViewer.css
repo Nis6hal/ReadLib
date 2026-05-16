@@ -14,14 +14,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 1rem;
+  padding: 0 1.5rem;
+  height: 70px;
+  background: var(--bg-secondary);
   border-bottom: 1px solid var(--glass-border);
   z-index: 100;
   flex-shrink: 0;
-  height: 56px;
-  background: var(--bg-secondary);
-  backdrop-filter: blur(12px);
-  gap: 0.5rem;
+  gap: 1rem;
 }
 
 .pdf-toolbar-left {
