@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { getAllBooks, saveBook, deleteBook as deleteBookDB, getSetting, setSetting, verifyPermission } from '../services/db';
 import { generateThumbnail } from '../services/thumbnail';
 import { extractPdfMetadata } from '../services/metadata';
+import { extractEpubMetadata, generateEpubThumbnail } from '../services/epubService';
 
 export const GENRES = ['Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
 
@@ -14,6 +15,7 @@ export function LibraryProvider({ children }) {
   const [theme, setTheme] = useState('dark');
   const [userName, setUserName] = useState('User');
   const [readingHistory, setReadingHistory] = useState({});
+  const [yearlyGoal, setYearlyGoal] = useState(50);
 
   // Load initial data
   useEffect(() => {
@@ -33,6 +35,11 @@ export function LibraryProvider({ children }) {
         const history = await getSetting('readingHistory');
         if (history) {
           setReadingHistory(history);
+        }
+
+        const goal = await getSetting('yearlyGoal');
+        if (goal) {
+          setYearlyGoal(goal);
         }
 
         const handle = await getSetting('libraryDir');
@@ -64,6 +71,34 @@ export function LibraryProvider({ children }) {
   const updateUserName = async (name) => {
     setUserName(name);
     await setSetting('userName', name);
+  };
+
+  const updateYearlyGoal = async (goal) => {
+    setYearlyGoal(goal);
+    await setSetting('yearlyGoal', goal);
+  };
+
+  const calculateStreak = () => {
+    if (!readingHistory || Object.keys(readingHistory).length === 0) return 0;
+    
+    const today = new Date().toISOString().split('T')[0];
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+
+    if (!readingHistory[today] && !readingHistory[yesterday]) return 0;
+
+    let streak = 0;
+    let checkDate = readingHistory[today] ? new Date(today) : new Date(yesterday);
+    
+    while (true) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+      if (readingHistory[dateStr] > 0) {
+        streak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return streak;
   };
 
   const detectGenre = (title, author) => {
@@ -112,15 +147,15 @@ export function LibraryProvider({ children }) {
     let newBooksList = [...currentBooks];
     let addedCount = 0;
 
-    // Scan for PDFs
+    // Scan for PDFs and EPUBs
     for await (const entry of handle.values()) {
-      if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
+      if (entry.kind === 'file' && (entry.name.toLowerCase().endsWith('.pdf') || entry.name.toLowerCase().endsWith('.epub'))) {
         const id = entry.name;
         foundIds.add(id);
         
         if (!existingIds.has(id)) {
           const title = entry.name
-            .replace('.pdf', '')
+            .replace(/\.(pdf|epub)$/i, '')
             .replace(/[-_]/g, ' ')
             .replace(/\s+/g, ' ')
             .trim();
@@ -168,10 +203,13 @@ export function LibraryProvider({ children }) {
       // Extract metadata if author is still unknown or no page count
       if ((book.author === 'Unknown Author' || !book.pageCount) && book.fileHandle) {
         try {
-          const meta = await extractPdfMetadata(book.fileHandle);
+          const isEpub = book.id.toLowerCase().endsWith('.epub');
+          const meta = isEpub 
+            ? await extractEpubMetadata(book.fileHandle)
+            : await extractPdfMetadata(book.fileHandle);
           
           // Use extracted title only if current title looks like a filename
-          if (meta.title && book.title === book.id.replace('.pdf', '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim()) {
+          if (meta.title && book.title === book.id.replace(/\.(pdf|epub)$/i, '').replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim()) {
             updatedBook.title = meta.title;
           }
 
@@ -187,21 +225,25 @@ export function LibraryProvider({ children }) {
           updatedBook.genre = detectGenre(updatedBook.title, updatedBook.author);
 
           needsUpdate = true;
-        } catch {
-          // Skip failed metadata extraction silently
+        } catch (err) {
+          console.warn(`Failed to enrich metadata for ${book.id}:`, err);
         }
       }
 
       // Generate cover thumbnail if missing
       if (!book.cover && book.fileHandle) {
         try {
-          const cover = await generateThumbnail(book.fileHandle);
+          const isEpub = book.id.toLowerCase().endsWith('.epub');
+          const cover = isEpub
+            ? await generateEpubThumbnail(book.fileHandle)
+            : await generateThumbnail(book.fileHandle);
+            
           if (cover) {
             updatedBook.cover = cover;
             needsUpdate = true;
           }
-        } catch {
-          // Skip failed thumbnails silently
+        } catch (err) {
+          console.warn(`Failed to generate cover for ${book.id}:`, err);
         }
       }
 
@@ -237,6 +279,7 @@ export function LibraryProvider({ children }) {
       theme,
       userName,
       readingHistory,
+      yearlyGoal,
       stats,
       selectDirectory,
       scanDirectory,
@@ -244,6 +287,8 @@ export function LibraryProvider({ children }) {
       deleteBook,
       toggleTheme,
       updateUserName,
+      updateYearlyGoal,
+      calculateStreak,
       logReadingSession
     }}>
       {children}

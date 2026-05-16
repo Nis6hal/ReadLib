@@ -147,6 +147,14 @@ function PdfViewer() {
   const zoomOut = () => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1)));
   const resetZoom = () => setScale(1.2);
 
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen();
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
   // Keyboard navigation
   useEffect(() => {
     const handleKey = (e) => {
@@ -264,6 +272,8 @@ function PdfViewer() {
           <button className="btn btn-icon" onClick={zoomOut} title="Zoom out (-)"><ZoomOut size={16} /></button>
           <span className="zoom-label">{Math.round(scale * 100)}%</span>
           <button className="btn btn-icon" onClick={zoomIn} title="Zoom in (+)"><ZoomIn size={16} /></button>
+          <div className="toolbar-divider"></div>
+          <button className="btn btn-icon" onClick={toggleFullscreen} title="Fullscreen"><Maximize size={18} /></button>
         </div>
       </div>
 

@@ -113,7 +113,68 @@
   }
 }
 
-/* Reading Activity Chart */
+/* Stats Row & Cards */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1.25rem;
+}
+
+.stat-card {
+  padding: 1.5rem;
+  border-radius: 20px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.stat-icon.accent { background: rgba(99, 102, 241, 0.1); color: var(--accent-primary); }
+.stat-icon.success { background: rgba(34, 197, 94, 0.1); color: #22c55e; }
+.stat-icon.flame { background: rgba(249, 115, 22, 0.1); color: #f97316; }
+.stat-icon.target { background: rgba(236, 72, 153, 0.1); color: #ec4899; }
+
+.stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.stat-progress {
+  height: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 2px;
+  margin-top: 0.5rem;
+}
+
+.stat-progress-bar {
+  height: 100%;
+  background: #ec4899;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+/* Reading Activity / Heatmap */
 .reading-activity {
   padding: 1.5rem;
   display: flex;
@@ -121,64 +182,45 @@
   gap: 1.5rem;
 }
 
-.activity-header h3 {
-  font-size: 1.2rem;
-  margin-bottom: 0.25rem;
-}
-
-.activity-header p {
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.chart-container {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  height: 120px;
-  padding-top: 20px;
-}
-
-.chart-column {
-  flex: 1;
+.heatmap-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 0.75rem;
+  gap: 1.25rem;
 }
 
-.bar-wrapper {
-  width: 32px;
-  height: 100%;
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 6px;
+}
+
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 6px;
-  display: flex;
-  align-items: flex-end;
-  overflow: visible;
   position: relative;
+  transition: transform 0.1s;
 }
 
-.bar {
-  width: 100%;
-  background: var(--accent-primary);
-  border-radius: 6px;
-  transition: height 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  cursor: pointer;
+.heatmap-cell:hover {
+  transform: scale(1.1);
+  z-index: 2;
 }
 
-.bar:hover {
-  filter: brightness(1.2);
-}
+.heatmap-cell.level-0 { background: rgba(255, 255, 255, 0.03); }
+.heatmap-cell.level-1 { background: rgba(99, 102, 241, 0.2); }
+.heatmap-cell.level-2 { background: rgba(99, 102, 241, 0.4); }
+.heatmap-cell.level-3 { background: rgba(99, 102, 241, 0.7); }
+.heatmap-cell.level-4 { background: var(--accent-primary); }
 
-.bar-tooltip {
+.cell-tooltip {
   position: absolute;
-  top: -24px;
+  bottom: 100%;
   left: 50%;
-  transform: translateX(-50%);
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  font-size: 0.7rem;
+  transform: translateX(-50%) translateY(-5px);
+  background: #000;
+  color: #fff;
+  font-size: 0.65rem;
   padding: 2px 6px;
   border-radius: 4px;
   white-space: nowrap;
@@ -187,14 +229,36 @@
   transition: opacity 0.2s;
 }
 
-.bar:hover .bar-tooltip {
+.heatmap-cell:hover .cell-tooltip {
   opacity: 1;
 }
 
-.day-label {
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   font-size: 0.75rem;
   color: var(--text-muted);
-  font-weight: 500;
+}
+
+.legend-cells {
+  display: flex;
+  gap: 4px;
+}
+
+.legend-cells .heatmap-cell {
+  width: 12px;
+  height: 12px;
+}
+
+@media (max-width: 1024px) {
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+  .heatmap-grid { grid-template-columns: repeat(10, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .stats-row { grid-template-columns: 1fr; }
+  .heatmap-grid { grid-template-columns: repeat(7, 1fr); }
 }
 
 .author-card-large {
@@ -238,3 +302,4 @@
   font-size: 0.85rem;
   color: var(--text-muted);
 }
+

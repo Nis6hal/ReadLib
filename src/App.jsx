@@ -9,7 +9,7 @@ import Library from './pages/Library';
 import ContinueReading from './pages/ContinueReading';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
-import PdfViewer from './components/PdfViewer';
+import Reader from './components/Reader';
 
 import TopBar from './components/TopBar';
 
@@ -30,7 +30,7 @@ function App() {
                     <Route path="/library" element={<Library />} />
                     <Route path="/profile" element={<Profile />} />
                     <Route path="/settings" element={<Settings />} />
-                    <Route path="/read/:id" element={<PdfViewer />} />
+                    <Route path="/read/:id" element={<Reader />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </div>

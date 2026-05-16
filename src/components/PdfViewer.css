@@ -234,7 +234,7 @@
 }
 
 .reader-theme-night .pdf-canvas {
-  filter: brightness(0.8) contrast(1.1);
+  filter: invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.1);
 }
 
 @media (max-width: 768px) {
