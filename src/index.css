@@ -233,63 +233,62 @@ h1, h2, h3, h4, h5, h6 {
   min-width: 0;
 }
 
-/* Global Header Styles - Brute Force Stability */
+/* Floating Glass Header - Modern Version */
 .app-header-container {
-  display: flex !important;
-  flex-direction: row !important;
-  align-items: center !important;
-  justify-content: space-between !important;
-  padding: 0 1.5rem !important;
-  height: 72px !important;
-  min-height: 72px !important;
-  background: var(--bg-primary) !important;
-  border-bottom: 1px solid var(--glass-border) !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 1000 !important;
-  width: 100% !important;
-  box-sizing: border-box !important;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  margin: 1.5rem 1.5rem 0;
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  z-index: 100;
 }
 
 .app-header-nav {
-  display: flex !important;
-  align-items: center !important;
-  gap: 2rem !important;
-  flex-shrink: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
 }
 
 .app-header-nav .nav-link {
-  color: var(--text-secondary) !important;
-  text-decoration: none !important;
-  font-weight: 600 !important;
-  font-size: 0.95rem !important;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
 }
 
 .app-header-nav .nav-link.active {
-  color: var(--text-primary) !important;
+  color: var(--accent-primary);
+  font-weight: 600;
 }
 
 .app-header-search {
-  flex: 1 !important;
-  max-width: 480px !important;
-  margin: 0 2rem !important;
-  position: relative !important;
+  flex: 1;
+  max-width: 400px;
+  margin: 0 1.5rem;
+  position: relative;
 }
 
 .app-header-search input {
-  width: 100% !important;
-  background: var(--bg-tertiary) !important;
-  border: 1px solid transparent !important;
-  padding: 0.75rem 1rem 0.75rem 3rem !important;
-  border-radius: 12px !important;
-  color: var(--text-primary) !important;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  padding: 0.6rem 1rem 0.6rem 2.8rem;
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
 }
 
 .app-header-actions {
-  display: flex !important;
-  align-items: center !important;
-  gap: 1rem !important;
-  flex-shrink: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .reader-main-toolbar {
