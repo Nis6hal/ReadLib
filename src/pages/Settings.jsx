@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, FolderOpen, Sun, Moon, Trash2, RefreshCw, Info, Database, Palette, HardDrive } from 'lucide-react';
+import { Settings as SettingsIcon, FolderOpen, Sun, Moon, Trash2, RefreshCw, Info, Database, Palette, HardDrive, Target } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import { useToast } from '../components/Toast';
 import '../App.css';
 import './Settings.css';
 
 function Settings() {
-  const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books, userName, updateUserName } = useLibrary();
+  const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books, userName, updateUserName, yearlyGoal, updateYearlyGoal } = useLibrary();
   const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
@@ -153,6 +153,36 @@ function Settings() {
         <button className="btn btn-danger" onClick={handleClearData} id="clear-data-btn">
           <Trash2 size={16} /> Clear All Data
         </button>
+      </div>
+
+      {/* Yearly Goal */}
+      <div className="card settings-section fade-in fade-in-delay-3">
+        <div className="settings-section-header">
+          <div className="settings-icon-wrap goal">
+            <Target size={18} />
+          </div>
+          <div>
+            <h3 className="settings-section-title">Yearly Reading Goal</h3>
+            <p className="settings-desc">How many books do you want to read this year?</p>
+          </div>
+        </div>
+        <div className="goal-input-row">
+          <input
+            type="number"
+            className="input goal-input"
+            value={yearlyGoal}
+            min={1}
+            max={365}
+            onChange={async (e) => {
+              const val = parseInt(e.target.value);
+              if (val >= 1 && val <= 365) {
+                await updateYearlyGoal(val);
+                addToast(`Goal updated to ${val} books 🎯`, 'success');
+              }
+            }}
+          />
+          <span className="goal-unit">books</span>
+        </div>
       </div>
 
       {/* About */}

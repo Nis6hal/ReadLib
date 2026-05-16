@@ -1,5 +1,5 @@
 .continue-reading-page {
-  max-width: 1200px;
+  max-width: 860px;
   margin: 0 auto;
 }
 
@@ -7,6 +7,128 @@
   margin-bottom: 1.75rem;
 }
 
-.continue-reading-page .books-grid {
-  gap: 1.25rem;
+.reading-cards-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.reading-card {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.5rem;
+  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.reading-card:hover {
+  transform: translateY(-3px);
+}
+
+/* Cover */
+.rc-cover {
+  width: 64px;
+  height: 88px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+.rc-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Info */
+.rc-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.rc-title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: 'Outfit', sans-serif;
+}
+
+.rc-author {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.rc-progress-area {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.rc-progress-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+}
+
+.rc-last-read {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* Continue Button */
+.rc-continue-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: var(--gradient-accent);
+  border: none;
+  border-radius: 12px;
+  color: #000;
+  font-weight: 600;
+  font-size: 0.88rem;
+  font-family: 'Inter', sans-serif;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.rc-continue-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 4px 16px rgba(251, 192, 45, 0.35);
+}
+
+@media (max-width: 640px) {
+  .reading-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .rc-cover {
+    width: 52px;
+    height: 72px;
+  }
+
+  .rc-continue-btn {
+    padding: 0.55rem 0.9rem;
+    font-size: 0.8rem;
+  }
+
+  .rc-title { font-size: 0.92rem; }
 }

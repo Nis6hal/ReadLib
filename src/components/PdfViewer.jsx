@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useLibrary } from '../context/LibraryContext';
 import { verifyPermission } from '../services/db';
@@ -28,9 +28,22 @@ function PdfViewer() {
   const [viewMode, setViewMode] = useState('single'); // 'single' or 'vertical'
   const [readerTheme, setReaderTheme] = useState('light'); // 'light', 'sepia', 'night'
   const [pageInput, setPageInput] = useState('1');
+  const [sessionSeconds, setSessionSeconds] = useState(0);
   const renderingRef = useRef(false);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
+
+  // Reading timer
+  useEffect(() => {
+    const interval = setInterval(() => setSessionSeconds(s => s + 1), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTime = (secs) => {
+    const m = Math.floor(secs / 60).toString().padStart(2, '0');
+    const s = (secs % 60).toString().padStart(2, '0');
+    return `${m}:${s}`;
+  };
 
 
   // Find the book - use decodeURIComponent for encoded IDs
@@ -292,6 +305,8 @@ function PdfViewer() {
           <button className="btn btn-icon" onClick={zoomIn} title="Zoom in (+)"><ZoomIn size={16} /></button>
           <div className="toolbar-divider"></div>
           <button className="btn btn-icon" onClick={toggleFullscreen} title="Fullscreen"><Maximize size={18} /></button>
+          <div className="toolbar-divider"></div>
+          <span className="reading-timer" title="Session reading time"><Timer size={13} /> {formatTime(sessionSeconds)}</span>
         </div>
       </div>
 

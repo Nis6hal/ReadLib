@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Search, Sun, Moon, Dices } from 'lucide-react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useLibrary } from '../context/LibraryContext';
@@ -10,6 +10,7 @@ function TopBar() {
   const { userName, theme, toggleTheme, books } = useLibrary();
   const { addToast } = useToast();
   const navigate = useNavigate();
+  const [searchInput, setSearchInput] = useState('');
 
   const handleRoulette = () => {
     if (!books || books.length === 0) {
@@ -20,6 +21,24 @@ function TopBar() {
     const randomBook = books[randomIndex];
     addToast(`The universe chose: ${randomBook.title} 🎲`, 'success');
     navigate(`/read/${encodeURIComponent(randomBook.id)}`);
+  };
+
+  const handleSearchChange = (e) => {
+    const val = e.target.value;
+    setSearchInput(val);
+    if (val.trim()) {
+      navigate(`/library?search=${encodeURIComponent(val.trim())}`);
+    } else {
+      navigate('/library');
+    }
+  };
+
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setSearchInput('');
+      navigate('/library');
+      e.target.blur();
+    }
   };
   
   const initials = userName
@@ -37,7 +56,13 @@ function TopBar() {
       
       <div className="search-container">
         <Search size={18} className="search-icon" />
-        <input type="text" placeholder="Search here" />
+        <input
+          type="text"
+          placeholder="Search books..."
+          value={searchInput}
+          onChange={handleSearchChange}
+          onKeyDown={handleSearchKeyDown}
+        />
       </div>
       
       <div className="top-actions">
@@ -57,3 +82,4 @@ function TopBar() {
 }
 
 export default TopBar;
+
