@@ -168,6 +168,9 @@ function PdfViewer() {
     }
   }, [currentPage, totalPages]);
 
+  const isJumping = useRef(false);
+  const jumpTimeout = useRef(null);
+
   const jumpToPage = useCallback((pageNum) => {
     const validPage = Math.max(1, Math.min(totalPages, pageNum));
     setCurrentPage(validPage);
@@ -176,7 +179,15 @@ function PdfViewer() {
     if (viewMode === 'vertical' && containerRef.current) {
       const target = containerRef.current.querySelector(`.pdf-page-item[data-page="${validPage}"]`);
       if (target) {
+        isJumping.current = true;
+        if (jumpTimeout.current) clearTimeout(jumpTimeout.current);
+        
         target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        
+        // Resume observer after scroll finishes (roughly)
+        jumpTimeout.current = setTimeout(() => {
+          isJumping.current = false;
+        }, 800);
       }
     }
   }, [totalPages, viewMode]);
@@ -288,14 +299,19 @@ function PdfViewer() {
 
     const observer = new IntersectionObserver(
       (entries) => {
+        if (isJumping.current) return; // Ignore updates while jumping
+        
         entries.forEach(entry => {
           if (entry.isIntersecting) {
             const pageNum = parseInt(entry.target.getAttribute('data-page'));
-            if (pageNum) setCurrentPage(pageNum);
+            if (pageNum) {
+              setCurrentPage(pageNum);
+              setPageInput(pageNum.toString());
+            }
           }
         });
       },
-      { threshold: 0.5 }
+      { threshold: 0.6 } // Slightly higher threshold for better accuracy
     );
 
     const pageElements = containerRef.current.querySelectorAll('.pdf-page-item');
