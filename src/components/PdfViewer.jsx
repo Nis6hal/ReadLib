@@ -103,6 +103,11 @@ function PdfViewer() {
           setPageInput(savedPage.toString());
           lastLoggedPage.current = savedPage;
           setLoading(false);
+          
+          // Auto-fit to width on mobile
+          if (window.innerWidth < 768) {
+            setTimeout(fitToWidth, 300);
+          }
         }
       } catch (err) {
         console.error('Error loading PDF:', err);
@@ -227,6 +232,25 @@ function PdfViewer() {
 
   const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
   const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
+  
+  const fitToWidth = useCallback(async () => {
+    if (!pdfDoc) return;
+    try {
+      const page = await pdfDoc.getPage(currentPage);
+      const vp = page.getViewport({ scale: 1 });
+      const container = document.querySelector('.pdf-content-area');
+      if (container) {
+        // Use a smaller padding on mobile to truly fill the screen
+        const padding = window.innerWidth < 768 ? 4 : 40;
+        const containerWidth = container.clientWidth - padding;
+        const newScale = containerWidth / vp.width;
+        setScale(+newScale.toFixed(2));
+      }
+    } catch (err) {
+      console.warn('Fit to width failed:', err);
+    }
+  }, [pdfDoc, currentPage]);
+
   const resetZoom = useCallback(() => setScale(1.2), []);
 
   const toggleFullscreen = () => {
@@ -422,8 +446,11 @@ function PdfViewer() {
           </div>
           <div className="toolbar-divider"></div>
           <button className="btn btn-icon" onClick={zoomOut} title="Zoom out (-)"><ZoomOut size={16} /></button>
-          <span className="zoom-label">{Math.round(scale * 100)}%</span>
+          <span className="zoom-label" onClick={fitToWidth} style={{ cursor: 'pointer' }} title="Fit to width">
+            {Math.round(scale * 100)}%
+          </span>
           <button className="btn btn-icon" onClick={zoomIn} title="Zoom in (+)"><ZoomIn size={16} /></button>
+          <button className="btn btn-icon" onClick={fitToWidth} title="Fit to Width"><Maximize size={16} /></button>
           <div className="toolbar-divider"></div>
           <button
             className={`btn btn-icon ${showNotes ? 'active' : ''}`}
