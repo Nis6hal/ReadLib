@@ -293,17 +293,24 @@
   }
 
   .pdf-canvas-wrapper {
-    padding: 0.25rem;
+    padding: 0.15rem;
     background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
   }
   
   .pdf-vertical-container {
-    padding: 1rem 0.25rem;
+    padding: 0.5rem 0.15rem;
+    gap: 1.5rem;
   }
   
   .pdf-canvas {
-    max-width: 100% !important;
+    width: 100% !important;
     height: auto !important;
+    box-shadow: none;
+    border-radius: 4px;
   }
 
   .toolbar-group {

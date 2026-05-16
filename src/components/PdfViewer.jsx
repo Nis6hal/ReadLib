@@ -171,7 +171,7 @@ function PdfViewer() {
   const isJumping = useRef(false);
   const jumpTimeout = useRef(null);
 
-  const jumpToPage = useCallback((pageNum) => {
+  const jumpToPage = useCallback((pageNum, behavior = 'smooth') => {
     const validPage = Math.max(1, Math.min(totalPages, pageNum));
     setCurrentPage(validPage);
     setPageInput(validPage.toString());
@@ -182,15 +182,32 @@ function PdfViewer() {
         isJumping.current = true;
         if (jumpTimeout.current) clearTimeout(jumpTimeout.current);
         
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        target.scrollIntoView({ behavior, block: 'start' });
         
-        // Resume observer after scroll finishes (roughly)
+        // Resume observer after scroll finishes
         jumpTimeout.current = setTimeout(() => {
           isJumping.current = false;
-        }, 800);
+        }, behavior === 'smooth' ? 800 : 50);
       }
     }
   }, [totalPages, viewMode]);
+
+  // Scroll to current page when switching to vertical mode
+  useEffect(() => {
+    if (viewMode === 'vertical' && pdfDoc) {
+      // Use instant scroll on mode switch to avoid "starting at 3" bug
+      setTimeout(() => jumpToPage(currentPage, 'auto'), 50);
+    }
+  }, [viewMode, pdfDoc]);
+
+  const handleCanvasClick = (e) => {
+    if (viewMode !== 'single') return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const ratio = x / rect.width;
+    if (ratio < 0.3) goToPrev();
+    else if (ratio > 0.7) goToNext();
+  };
 
   const goToPrev = useCallback(() => {
     const prev = Math.max(1, currentPage - 1);
@@ -299,19 +316,20 @@ function PdfViewer() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (isJumping.current) return; // Ignore updates while jumping
+        if (isJumping.current) return;
         
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            const pageNum = parseInt(entry.target.getAttribute('data-page'));
-            if (pageNum) {
-              setCurrentPage(pageNum);
-              setPageInput(pageNum.toString());
-            }
+        // Find the entry that is most visible
+        const visibleEntry = entries.find(entry => entry.isIntersecting && entry.intersectionRatio > 0.5);
+        
+        if (visibleEntry) {
+          const pageNum = parseInt(visibleEntry.target.getAttribute('data-page'));
+          if (pageNum && pageNum !== currentPage) {
+            setCurrentPage(pageNum);
+            setPageInput(pageNum.toString());
           }
-        });
+        }
       },
-      { threshold: 0.6 } // Slightly higher threshold for better accuracy
+      { threshold: [0.5, 0.7, 0.9] }
     );
 
     const pageElements = containerRef.current.querySelectorAll('.pdf-page-item');
@@ -419,7 +437,7 @@ function PdfViewer() {
 
       <div className="pdf-content-area">
         {viewMode === 'single' ? (
-          <div className="pdf-canvas-wrapper single-view">
+          <div className="pdf-canvas-wrapper single-view" onClick={handleCanvasClick}>
             <canvas ref={canvasRef} className="pdf-canvas"></canvas>
           </div>
         ) : (
