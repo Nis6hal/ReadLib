@@ -22,11 +22,12 @@ function PdfViewer() {
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(0);
-  const [scale, setScale] = useState(window.innerWidth < 768 ? 0.5 : 1.2);
+  const [scale, setScale] = useState(window.innerWidth < 768 ? 0.8 : 1.2);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [viewMode, setViewMode] = useState('single'); // 'single' or 'vertical'
   const [readerTheme, setReaderTheme] = useState('light'); // 'light', 'sepia', 'night'
+  const [pageInput, setPageInput] = useState('1');
   const renderingRef = useRef(false);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
@@ -69,6 +70,7 @@ function PdfViewer() {
             ? Math.max(1, Math.round((book.progress / 100) * pdf.numPages))
             : 1;
           setCurrentPage(savedPage);
+          setPageInput(savedPage.toString());
           lastLoggedPage.current = savedPage;
           setLoading(false);
         }
@@ -120,6 +122,7 @@ function PdfViewer() {
   useEffect(() => {
     if (bookRef.current && totalPages > 0 && pdfDoc) {
       const progress = Math.round((currentPage / totalPages) * 100);
+      setPageInput(currentPage.toString());
       const updatedBook = {
         ...bookRef.current,
         progress,
@@ -158,6 +161,9 @@ function PdfViewer() {
   // Keyboard navigation
   useEffect(() => {
     const handleKey = (e) => {
+      // Ignore if user is typing in an input
+      if (document.activeElement.tagName === 'INPUT' || document.activeElement.tagName === 'TEXTAREA') return;
+
       if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
         e.preventDefault();
         goToPrev();
@@ -236,19 +242,31 @@ function PdfViewer() {
           <button className="btn btn-icon" onClick={goToPrev} disabled={currentPage <= 1} title="Previous page (←)"><ChevronLeft size={20} /></button>
           <span className="pdf-page-info">
             <input 
-              type="number" 
+              type="text" 
               className="pdf-page-input" 
-              value={currentPage}
-              min={1}
-              max={totalPages}
+              value={pageInput}
               onChange={e => {
-                const val = parseInt(e.target.value);
-                if (val >= 1 && val <= totalPages) {
+                const valStr = e.target.value;
+                setPageInput(valStr);
+                
+                const val = parseInt(valStr);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) {
                   setCurrentPage(val);
                   if (viewMode === 'vertical') {
                     const el = document.querySelector(`[data-page="${val}"]`);
                     el?.scrollIntoView({ behavior: 'smooth' });
                   }
+                }
+              }}
+              onBlur={() => {
+                // Reset to current page if invalid
+                if (pageInput === '' || isNaN(parseInt(pageInput))) {
+                  setPageInput(currentPage.toString());
+                }
+              }}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  e.target.blur();
                 }
               }}
             />

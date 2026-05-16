@@ -238,25 +238,47 @@
 }
 
 @media (max-width: 768px) {
+  .pdf-viewer-container {
+    z-index: 200; /* Ensure it covers bottom nav if any */
+  }
+
   .pdf-toolbar {
     padding: 0.4rem 0.5rem;
-    gap: 0.4rem;
+    gap: 0.25rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  
+  .pdf-toolbar::-webkit-scrollbar {
+    display: none;
   }
 
   .pdf-title {
     display: none;
   }
 
-  .pdf-toolbar-right .zoom-label {
+  .pdf-toolbar-right .zoom-label,
+  .pdf-toolbar-right .toolbar-divider {
     display: none;
   }
 
-  .pdf-canvas-wrapper, .pdf-vertical-container {
-    padding: 0.5rem;
+  .pdf-canvas-wrapper {
+    padding: 0.25rem;
+    background: #000;
   }
   
-  .toolbar-divider {
-    display: none;
+  .pdf-vertical-container {
+    padding: 1rem 0.25rem;
+  }
+  
+  .pdf-canvas {
+    max-width: 100% !important;
+    height: auto !important;
+  }
+
+  .toolbar-group {
+    scale: 0.9;
   }
 }
 

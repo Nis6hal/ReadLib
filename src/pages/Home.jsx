@@ -6,7 +6,7 @@ import BookCard from '../components/BookCard';
 import '../App.css';
 import './Home.css';
 
-import { Filter, ChevronRight, FlaskConical, Palette, Briefcase, Utensils, MoreHorizontal } from 'lucide-react';
+import { Filter, ChevronRight, FlaskConical, Palette, Briefcase, Utensils, MoreHorizontal, Brain } from 'lucide-react';
 
 import { BookCardSkeleton, GenreCardSkeleton } from '../components/Skeleton';
 
@@ -17,7 +17,7 @@ function ReadingHeatmap({ history }) {
   const heatmapData = Array.from({ length: daysToShow }, (_, i) => {
     const d = new Date();
     d.setDate(today.getDate() - (daysToShow - 1 - i));
-    const dateStr = d.toISOString().split('T')[0];
+    const dateStr = d.toLocaleDateString('en-CA');
     const pages = history[dateStr] || 0;
     
     let level = 0;
@@ -103,7 +103,7 @@ function Home() {
 
   const subjects = [
     { name: 'Self-improvement', icon: <FlaskConical size={24} />, color: 'var(--bg-secondary)' },
-    { name: 'Fantasy', icon: <Palette size={24} />, color: 'var(--bg-secondary)' },
+    { name: 'Psychology', icon: <Brain size={24} />, color: 'var(--bg-secondary)' },
     { name: 'Novel', icon: <Briefcase size={24} />, color: 'var(--bg-secondary)' },
     { name: 'Biography', icon: <div className="dot-icon" />, color: 'var(--bg-secondary)' },
     { name: 'Sci-fi', icon: <Utensils size={24} />, color: 'var(--accent-primary)', textColor: 'var(--bg-primary)' },

@@ -4,7 +4,7 @@ import { generateThumbnail } from '../services/thumbnail';
 import { extractPdfMetadata } from '../services/metadata';
 import { extractEpubMetadata, generateEpubThumbnail } from '../services/epubService';
 
-export const GENRES = ['Self-improvement', 'Fantasy', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
+export const GENRES = ['Self-improvement', 'Psychology', 'Novel', 'Biography', 'Sci-fi', 'Mystery Thriller', 'Other'];
 
 const LibraryContext = createContext();
 
@@ -59,7 +59,7 @@ export function LibraryProvider({ children }) {
   }, []);
 
   const logReadingSession = async (pages) => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local time
     const newHistory = {
       ...readingHistory,
       [today]: (readingHistory[today] || 0) + pages
@@ -81,8 +81,8 @@ export function LibraryProvider({ children }) {
   const calculateStreak = () => {
     if (!readingHistory || Object.keys(readingHistory).length === 0) return 0;
     
-    const today = new Date().toISOString().split('T')[0];
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+    const today = new Date().toLocaleDateString('en-CA');
+    const yesterday = new Date(Date.now() - 86400000).toLocaleDateString('en-CA');
 
     if (!readingHistory[today] && !readingHistory[yesterday]) return 0;
 
@@ -90,7 +90,7 @@ export function LibraryProvider({ children }) {
     let checkDate = readingHistory[today] ? new Date(today) : new Date(yesterday);
     
     while (true) {
-      const dateStr = checkDate.toISOString().split('T')[0];
+      const dateStr = checkDate.toLocaleDateString('en-CA');
       if (readingHistory[dateStr] > 0) {
         streak++;
         checkDate.setDate(checkDate.getDate() - 1);
@@ -103,7 +103,7 @@ export function LibraryProvider({ children }) {
 
   const detectGenre = (title, author) => {
     const text = (title + ' ' + author).toLowerCase();
-    if (text.includes('fantasy') || text.includes('magic') || text.includes('dragon') || text.includes('wizard')) return 'Fantasy';
+    if (text.includes('psychology') || text.includes('mind') || text.includes('behavior') || text.includes('mental')) return 'Psychology';
     if (text.includes('sci-fi') || text.includes('space') || text.includes('robot') || text.includes('alien') || text.includes('future')) return 'Sci-fi';
     if (text.includes('self-improvement') || text.includes('habit') || text.includes('mindset') || text.includes('productivity') || text.includes('guide')) return 'Self-improvement';
     if (text.includes('biography') || text.includes('memoir') || text.includes('life of') || text.includes('autobiography')) return 'Biography';
