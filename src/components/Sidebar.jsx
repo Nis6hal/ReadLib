@@ -1,3 +1,4 @@
+import React, { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
