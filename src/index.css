@@ -301,6 +301,22 @@ h1, h2, h3, h4, h5, h6 {
   border-bottom: 1px solid var(--glass-border) !important;
   z-index: 1000 !important;
   width: 100% !important;
+  overflow-x: auto !important;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.reader-main-toolbar::-webkit-scrollbar {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .reader-main-toolbar {
+    justify-content: flex-start !important;
+    gap: 0.5rem !important;
+    padding: 0 0.75rem !important;
+    height: 60px !important;
+  }
 }
 
 .right-sidebar {

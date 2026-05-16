@@ -494,22 +494,29 @@
   outline: none;
 }
 
-  @media (max-width: 768px) {
+@media (max-width: 768px) {
   .pdf-side-panel {
-    width: 100%;
-    height: 65vh;
     top: auto;
     bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100% !important;
+    height: 60vh !important;
     border-left: none;
     border-top: 1px solid var(--glass-border);
     transform: translateY(100%);
-    opacity: 1; /* Reset opacity for mobile transition */
+    opacity: 1;
+    border-radius: 24px 24px 0 0;
+    box-shadow: 0 -10px 40px rgba(0,0,0,0.4);
+    z-index: 2000;
+  }
+  
+  .pdf-side-panel.open {
+    transform: translateY(0) !important;
   }
 
-  .pdf-side-panel.open {
-    transform: translateY(0);
-    transform: translateX(0);
-    pointer-events: auto;
+  .pdf-content-area {
+    margin-right: 0 !important;
   }
 }
 

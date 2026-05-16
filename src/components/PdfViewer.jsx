@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, X as CloseIcon } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, StickyNote, X as CloseIcon, Search, Menu } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useLibrary } from '../context/LibraryContext';
 import { verifyPermission } from '../services/db';
@@ -31,6 +31,14 @@ function PdfViewer() {
   const [readerTheme, setReaderTheme] = useState('light'); // 'light', 'sepia', 'night'
   const [pageInput, setPageInput] = useState('1');
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [showNotes, setShowNotes] = useState(false);
+  const [showTOC, setShowTOC] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
+  const [outline, setOutline] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [notesText, setNotesText] = useState('');
+  const [notesSaved, setNotesSaved] = useState(true);
   const renderingRef = useRef(false);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
@@ -80,6 +88,9 @@ function PdfViewer() {
         if (!cancelled) {
           setPdfDoc(pdf);
           setTotalPages(pdf.numPages);
+          
+          const outlineData = await pdf.getOutline();
+          setOutline(outlineData || []);
           
           // Get first page dimensions for placeholders
           const firstPage = await pdf.getPage(1);
@@ -249,6 +260,37 @@ function PdfViewer() {
   const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
   const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
   
+  const handleSearch = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    if (!query || query.length < 3 || !pdfDoc) {
+      setSearchResults([]);
+      return;
+    }
+    
+    // Use a small delay to prevent UI freezing on every keystroke
+    if (window.searchTimeout) clearTimeout(window.searchTimeout);
+    window.searchTimeout = setTimeout(async () => {
+      const results = [];
+      const limit = Math.min(totalPages, 150); // Search up to 150 pages
+      for (let i = 1; i <= limit; i++) {
+        const page = await pdfDoc.getPage(i);
+        const textContent = await page.getTextContent();
+        const text = textContent.items.map(item => item.str).join(' ');
+        if (text.toLowerCase().includes(query.toLowerCase())) {
+          results.push({ 
+            page: i, 
+            snippet: text.toLowerCase().split(query.toLowerCase())[0].slice(-30) + 
+                     query + 
+                     text.toLowerCase().split(query.toLowerCase())[1].slice(0, 30)
+          });
+          if (results.length > 15) break; 
+        }
+      }
+      setSearchResults(results);
+    }, 400);
+  };
+
 
   const fitToWidth = useCallback(async () => {
     if (!pdfDoc) return;
@@ -452,6 +494,11 @@ function PdfViewer() {
 
         <div className="pdf-toolbar-right">
           <div className="toolbar-group">
+            <button className={`btn btn-icon ${showTOC ? 'active' : ''}`} onClick={() => { setShowTOC(!showTOC); setShowSearch(false); setShowNotes(false); }} title="Table of Contents"><Menu size={18} /></button>
+            <button className={`btn btn-icon ${showSearch ? 'active' : ''}`} onClick={() => { setShowSearch(!showSearch); setShowTOC(false); setShowNotes(false); }} title="Search"><Search size={18} /></button>
+          </div>
+          <div className="toolbar-divider"></div>
+          <div className="toolbar-group">
             <button className={`btn btn-icon ${viewMode === 'single' ? 'active' : ''}`} onClick={() => setViewMode('single')} title="Single Page"><Layout size={18} /></button>
             <button className={`btn btn-icon ${viewMode === 'vertical' ? 'active' : ''}`} onClick={() => setViewMode('vertical')} title="Vertical Scroll"><Scroll size={18} /></button>
           </div>
@@ -469,6 +516,18 @@ function PdfViewer() {
           <button className="btn btn-icon" onClick={zoomIn} title="Zoom in (+)"><ZoomIn size={16} /></button>
           <button className="btn btn-icon" onClick={fitToWidth} title="Fit to Width"><Maximize size={16} /></button>
           <div className="toolbar-divider"></div>
+          <button
+            className={`btn btn-icon ${showNotes ? 'active' : ''}`}
+            onClick={() => {
+              setShowNotes(!showNotes);
+              setShowTOC(false);
+              setShowSearch(false);
+            }}
+            title="Reading Notes"
+          >
+            <StickyNote size={18} />
+          </button>
+          <div className="toolbar-divider"></div>
           <span className="reading-timer" title="Session reading time"><Timer size={13} /> {formatTime(sessionSeconds)}</span>
         </div>
       </div>
@@ -478,6 +537,88 @@ function PdfViewer() {
       </div>
 
       <div className="pdf-content-area">
+        {/* Side Panels */}
+        <div className={`pdf-side-panel toc-panel ${showTOC ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3>Table of Contents</h3>
+            <button className="btn-icon" onClick={() => setShowTOC(false)}><CloseIcon size={18} /></button>
+          </div>
+          <div className="panel-content">
+            {outline.length > 0 ? (
+              <ul className="toc-list">
+                {outline.map((item, i) => (
+                  <li key={i} onClick={async () => {
+                    if (item.dest) {
+                      const pageIndex = await pdfDoc.getPageIndex(item.dest[0]);
+                      jumpToPage(pageIndex + 1);
+                      setShowTOC(false);
+                    }
+                  }}>
+                    {item.title}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="empty-msg">No bookmarks found.</p>
+            )}
+          </div>
+        </div>
+
+        <div className={`pdf-side-panel search-panel ${showSearch ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3>Search</h3>
+            <button className="btn-icon" onClick={() => setShowSearch(false)}><CloseIcon size={18} /></button>
+          </div>
+          <div className="panel-content">
+            <div className="search-input-wrapper">
+              <Search size={16} className="search-icon" />
+              <input 
+                type="text" 
+                placeholder="Find in document..." 
+                value={searchQuery}
+                onChange={handleSearch}
+                autoFocus
+              />
+            </div>
+            <div className="search-results">
+              {searchResults.map((res, i) => (
+                <div key={i} className="search-result-item" onClick={() => { jumpToPage(res.page); setShowSearch(false); }}>
+                  <div className="res-page">Page {res.page}</div>
+                  <div className="res-snippet">...{res.snippet}...</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className={`pdf-side-panel notes-panel ${showNotes ? 'open' : ''}`}>
+          <div className="panel-header">
+            <h3><StickyNote size={16} /> Notes</h3>
+            <button className="btn-icon" onClick={async () => {
+              if (book) await updateBook({ ...book, notes: notesText });
+              setNotesSaved(true);
+              setShowNotes(false);
+            }}>
+              <CloseIcon size={18} />
+            </button>
+          </div>
+          <div className="panel-content">
+            <textarea
+              className="notes-panel-textarea"
+              placeholder="Jot down your thoughts..."
+              value={notesText}
+              onChange={e => { setNotesText(e.target.value); setNotesSaved(false); }}
+              onBlur={async () => {
+                if (book) await updateBook({ ...book, notes: notesText });
+                setNotesSaved(true);
+              }}
+            />
+          </div>
+          <div className="panel-footer">
+            <span className="notes-save-status">{notesSaved ? '✓ Saved' : 'Unsaved...'}</span>
+          </div>
+        </div>
+
         {viewMode === 'single' ? (
           <div className="pdf-canvas-wrapper single-view" onClick={handleCanvasClick}>
             <div className="pdf-page-container">
