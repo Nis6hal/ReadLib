@@ -182,6 +182,15 @@ function PdfViewer() {
     }
   };
 
+  // Helper to scroll to a specific page in vertical mode
+  const scrollToPage = useCallback((pageNum) => {
+    if (viewMode !== 'vertical' || !containerRef.current) return;
+    const target = containerRef.current.querySelector(`.pdf-page-item[data-page="${pageNum}"]`);
+    if (target) {
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [viewMode]);
+
   // Keyboard navigation — mode-aware
   useEffect(() => {
     const handleKey = (e) => {
@@ -236,14 +245,24 @@ function PdfViewer() {
             if (container) container.scrollBy({ top: 200, behavior: 'smooth' });
             break;
           }
-          case 'ArrowLeft':
+          case 'ArrowLeft': {
             e.preventDefault();
-            goToPrev();
+            const prevPage = Math.max(1, currentPage - 1);
+            if (prevPage !== currentPage) {
+              setCurrentPage(prevPage);
+              scrollToPage(prevPage);
+            }
             break;
-          case 'ArrowRight':
+          }
+          case 'ArrowRight': {
             e.preventDefault();
-            goToNext();
+            const nextPage = Math.min(totalPages, currentPage + 1);
+            if (nextPage !== currentPage) {
+              setCurrentPage(nextPage);
+              scrollToPage(nextPage);
+            }
             break;
+          }
           default: break;
         }
       }
@@ -256,7 +275,7 @@ function PdfViewer() {
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut]);
+  }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut, currentPage, totalPages, scrollToPage]);
 
   // Vertical Scroll Observer
   useEffect(() => {
