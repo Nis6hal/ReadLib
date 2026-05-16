@@ -458,7 +458,7 @@ function PdfViewer() {
 
   return (
     <div className={`pdf-viewer-container reader-theme-${readerTheme}`}>
-      <div className="pdf-toolbar glass-panel">
+      <div className="reader-main-toolbar">
         <div className="pdf-toolbar-left">
           <button className="btn btn-icon" onClick={() => navigate(-1)} title="Go back (Esc)"><ArrowLeft size={20} /></button>
           <span className="pdf-title">{book?.title || 'PDF Viewer'}</span>

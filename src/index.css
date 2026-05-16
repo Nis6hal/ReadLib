@@ -217,13 +217,12 @@ h1, h2, h3, h4, h5, h6 {
   min-width: 0;
 }
 
-
 .content-wrapper {
   display: flex;
   flex: 1;
   overflow: hidden;
   min-height: 0;
-  min-width: 0; /* Critical to allow shrinking */
+  min-width: 0;
 }
 
 .main-panel {
@@ -231,7 +230,78 @@ h1, h2, h3, h4, h5, h6 {
   overflow-y: auto;
   overflow-x: hidden;
   padding: 1rem 1.5rem;
-  min-width: 0; /* Critical to allow shrinking */
+  min-width: 0;
+}
+
+/* Global Header Styles - Brute Force Stability */
+.app-header-container {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 1.5rem !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  background: var(--bg-primary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 1000 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.app-header-nav {
+  display: flex !important;
+  align-items: center !important;
+  gap: 2rem !important;
+  flex-shrink: 0 !important;
+}
+
+.app-header-nav .nav-link {
+  color: var(--text-secondary) !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  font-size: 0.95rem !important;
+}
+
+.app-header-nav .nav-link.active {
+  color: var(--text-primary) !important;
+}
+
+.app-header-search {
+  flex: 1 !important;
+  max-width: 480px !important;
+  margin: 0 2rem !important;
+  position: relative !important;
+}
+
+.app-header-search input {
+  width: 100% !important;
+  background: var(--bg-tertiary) !important;
+  border: 1px solid transparent !important;
+  padding: 0.75rem 1rem 0.75rem 3rem !important;
+  border-radius: 12px !important;
+  color: var(--text-primary) !important;
+}
+
+.app-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  flex-shrink: 0 !important;
+}
+
+.reader-main-toolbar {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 0 1.5rem !important;
+  height: 70px !important;
+  background: var(--bg-secondary) !important;
+  border-bottom: 1px solid var(--glass-border) !important;
+  z-index: 1000 !important;
+  width: 100% !important;
 }
 
 .right-sidebar {

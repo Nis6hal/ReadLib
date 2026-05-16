@@ -52,13 +52,13 @@ function TopBar() {
     .toUpperCase();
 
   return (
-    <div className="top-bar">
-      <nav className="top-nav">
+    <div className="app-header-container">
+      <nav className="app-header-nav">
         <NavLink to="/" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`} end>Dashboard</NavLink>
         <NavLink to="/library" className={({isActive}) => `nav-link ${isActive ? 'active' : ''}`}>Library</NavLink>
       </nav>
       
-      <div className="search-container">
+      <div className="app-header-search">
         <Search size={18} className="search-icon" />
         <input
           type="text"
@@ -69,7 +69,7 @@ function TopBar() {
         />
       </div>
       
-      <div className="top-actions">
+      <div className="app-header-actions">
         <button className="icon-btn" onClick={handleRoulette} title="Book Roulette 🎲">
           <Dices size={20} />
         </button>
