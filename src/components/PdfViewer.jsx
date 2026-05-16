@@ -168,8 +168,29 @@ function PdfViewer() {
     }
   }, [currentPage, totalPages]);
 
-  const goToPrev = useCallback(() => setCurrentPage(p => Math.max(1, p - 1)), []);
-  const goToNext = useCallback(() => setCurrentPage(p => Math.min(totalPages, p + 1)), [totalPages]);
+  const jumpToPage = useCallback((pageNum) => {
+    const validPage = Math.max(1, Math.min(totalPages, pageNum));
+    setCurrentPage(validPage);
+    setPageInput(validPage.toString());
+    
+    if (viewMode === 'vertical' && containerRef.current) {
+      const target = containerRef.current.querySelector(`.pdf-page-item[data-page="${validPage}"]`);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+  }, [totalPages, viewMode]);
+
+  const goToPrev = useCallback(() => {
+    const prev = Math.max(1, currentPage - 1);
+    if (prev !== currentPage) jumpToPage(prev);
+  }, [currentPage, jumpToPage]);
+
+  const goToNext = useCallback(() => {
+    const next = Math.min(totalPages, currentPage + 1);
+    if (next !== currentPage) jumpToPage(next);
+  }, [currentPage, totalPages, jumpToPage]);
+
   const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
   const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
   const resetZoom = useCallback(() => setScale(1.2), []);
@@ -182,14 +203,6 @@ function PdfViewer() {
     }
   };
 
-  // Helper to scroll to a specific page in vertical mode
-  const scrollToPage = useCallback((pageNum) => {
-    if (viewMode !== 'vertical' || !containerRef.current) return;
-    const target = containerRef.current.querySelector(`.pdf-page-item[data-page="${pageNum}"]`);
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }, [viewMode]);
 
   // Keyboard navigation — mode-aware
   useEffect(() => {
@@ -247,20 +260,12 @@ function PdfViewer() {
           }
           case 'ArrowLeft': {
             e.preventDefault();
-            const prevPage = Math.max(1, currentPage - 1);
-            if (prevPage !== currentPage) {
-              setCurrentPage(prevPage);
-              scrollToPage(prevPage);
-            }
+            goToPrev();
             break;
           }
           case 'ArrowRight': {
             e.preventDefault();
-            const nextPage = Math.min(totalPages, currentPage + 1);
-            if (nextPage !== currentPage) {
-              setCurrentPage(nextPage);
-              scrollToPage(nextPage);
-            }
+            goToNext();
             break;
           }
           default: break;
@@ -275,7 +280,7 @@ function PdfViewer() {
 
     window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
-  }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut, currentPage, totalPages, scrollToPage]);
+  }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut]);
 
   // Vertical Scroll Observer
   useEffect(() => {
@@ -340,28 +345,22 @@ function PdfViewer() {
               type="text" 
               className="pdf-page-input" 
               value={pageInput}
-              onChange={e => {
-                const valStr = e.target.value;
-                setPageInput(valStr);
-                
-                const val = parseInt(valStr);
-                if (!isNaN(val) && val >= 1 && val <= totalPages) {
-                  setCurrentPage(val);
-                  if (viewMode === 'vertical') {
-                    const el = document.querySelector(`[data-page="${val}"]`);
-                    el?.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }
-              }}
+              onChange={e => setPageInput(e.target.value)}
               onBlur={() => {
-                // Reset to current page if invalid
-                if (pageInput === '' || isNaN(parseInt(pageInput))) {
+                const val = parseInt(pageInput);
+                if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                  jumpToPage(val);
+                } else {
                   setPageInput(currentPage.toString());
                 }
               }}
               onKeyDown={e => {
                 if (e.key === 'Enter') {
-                  e.target.blur();
+                  const val = parseInt(pageInput);
+                  if (!isNaN(val) && val >= 1 && val <= totalPages) {
+                    jumpToPage(val);
+                    e.target.blur();
+                  }
                 }
               }}
             />
