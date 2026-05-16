@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
 import { useLibrary } from '../context/LibraryContext';
 import { useToast } from './Toast';
@@ -10,6 +9,10 @@ function Sidebar() {
   const { scanDirectory, dirHandle } = useLibrary();
   const { addToast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
+  const location = useLocation();
+
+  // Don't show sidebar in reader mode
+  if (location.pathname.startsWith('/read/')) return null;
 
   const navItems = [
     { to: '/', icon: <Home size={22} />, label: 'Home', end: true },

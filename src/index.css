@@ -249,24 +249,31 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 @media (max-width: 768px) {
-  .main-panel {
-    padding: 1rem;
-    /* Increase padding to ensure content is never hidden by the fixed bottom nav (65px height) */
-    padding-bottom: calc(100px + env(safe-area-inset-bottom));
-  }
-  
   .app-container {
-    flex-direction: row; /* keep sidebar side-by-side logic working */
-    position: relative;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
   }
 
   .main-content {
     flex: 1;
-    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    order: 1;
+  }
+
+  .sidebar {
+    order: 2;
+  }
+
+  .main-panel {
+    padding: 1rem;
+    padding-bottom: 1rem; /* No more giant padding needed */
   }
   
   .content-wrapper {
     flex-direction: column;
+    overflow: hidden;
   }
 }
 
