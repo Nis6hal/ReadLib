@@ -304,11 +304,10 @@
   }
 
   .reader-main-toolbar {
-    justify-content: flex-start;
-    padding: 0 0.5rem;
-    gap: 0.5rem;
-    overflow-x: auto;
-    scrollbar-width: none;
+    justify-content: space-between;
+    padding: 0 0.25rem;
+    gap: 0.25rem;
+    overflow: hidden;
     height: 56px;
   }
 
@@ -319,7 +318,12 @@
   .pdf-toolbar-left,
   .pdf-toolbar-center,
   .pdf-toolbar-right {
-    flex: 0 0 auto;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  .pdf-toolbar-right {
+    gap: 0.25rem;
   }
 
   .pdf-title {
@@ -334,6 +338,17 @@
     display: none;
   }
 
+  .pdf-page-info {
+    min-width: auto;
+    gap: 0.2rem;
+  }
+
+  .pdf-page-input {
+    width: 36px;
+    height: 26px;
+    font-size: 0.8rem;
+  }
+
   .pdf-canvas-wrapper {
     padding: 0.25rem;
     background: #000;
@@ -346,9 +361,8 @@
     border-radius: 4px;
   }
 
-
-
   .toolbar-group {
-    scale: 0.9;
+    scale: 0.85;
+    transform-origin: center right;
   }
 }
