@@ -71,6 +71,12 @@ function Home() {
   const booksReadThisYear = books.filter(b => b.category === 'Completed' && b.lastRead && new Date(b.lastRead).getFullYear() === new Date().getFullYear()).length;
   const goalProgress = Math.min(100, Math.round((booksReadThisYear / yearlyGoal) * 100));
 
+  // Dynamic Greeting
+  const hour = new Date().getHours();
+  let greeting = 'Good evening';
+  if (hour < 12) greeting = 'Good morning';
+  else if (hour < 18) greeting = 'Good afternoon';
+
   const recentlyRead = books
     .filter(b => b.lastRead)
     .sort((a, b) => new Date(b.lastRead) - new Date(a.lastRead))
@@ -138,28 +144,39 @@ function Home() {
   return (
     <div className="home-page fade-in">
       
-      <div className="stats-row">
-        <div className="stat-card accent">
-          <div className="stat-icon accent"><BookOpen size={20} /></div>
+      <header className="dashboard-header">
+        <div className="greeting-wrapper">
+          <h1 className="greeting-title">{greeting}, Reader</h1>
+          <p className="greeting-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
+        </div>
+      </header>
+      
+      <div className="stats-bento-grid">
+        <div className="bento-card stat-card accent">
+          <div className="stat-icon accent"><BookOpen size={24} /></div>
           <div className="stat-value">{stats.total}</div>
           <div className="stat-label">Total Books</div>
         </div>
-        <div className="stat-card success">
-          <div className="stat-icon success"><CheckCircle size={20} /></div>
+        <div className="bento-card stat-card success">
+          <div className="stat-icon success"><CheckCircle size={24} /></div>
           <div className="stat-value">{stats.read}</div>
           <div className="stat-label">Finished</div>
         </div>
-        <div className="stat-card flame">
-          <div className="stat-icon flame"><Flame size={20} /></div>
+        <div className="bento-card stat-card flame">
+          <div className="stat-icon flame"><Flame size={24} /></div>
           <div className="stat-value">{streak}</div>
           <div className="stat-label">Day Streak</div>
         </div>
-        <div className="stat-card target">
-          <div className="stat-icon target"><Target size={20} /></div>
-          <div className="stat-value">{booksReadThisYear}/{yearlyGoal}</div>
-          <div className="stat-label">Yearly Goal</div>
+        <div className="bento-card stat-card target bento-wide">
+          <div className="target-header">
+            <div className="stat-icon target"><Target size={24} /></div>
+            <div className="target-text">
+              <div className="stat-label">Yearly Goal</div>
+              <div className="stat-value">{booksReadThisYear} / {yearlyGoal}</div>
+            </div>
+          </div>
           <div className="stat-progress">
-            <div className="stat-progress-bar" style={{ width: `${goalProgress}%` }}></div>
+            <div className="stat-progress-bar glowing" style={{ width: `${goalProgress}%` }}></div>
           </div>
         </div>
       </div>
@@ -167,12 +184,12 @@ function Home() {
       <ReadingHeatmap history={readingHistory} />
       
       {/* Previous Reading */}
-      <section className="dashboard-section">
+      <section className="dashboard-section relative-section">
         <div className="section-header">
-          <h2>Previous Reading</h2>
+          <h2>Continue Reading</h2>
           <button className="filter-btn" onClick={() => navigate('/library')}><Filter size={14} /> Filter</button>
         </div>
-        <div className="horizontal-scroll">
+        <div className="horizontal-scroll hide-scrollbar with-fade">
           {recentlyRead.length > 0 ? (
             recentlyRead.map(book => (
               <BookCard key={book.id} book={book} variant="simple" />
@@ -186,27 +203,28 @@ function Home() {
       {/* Subjects Section */}
       <section className="dashboard-section">
         <div className="section-header">
-          <h2>Subjects section</h2>
+          <h2>Explore Genres</h2>
         </div>
-        <div className="subjects-grid">
+        <div className="subjects-grid bento-subjects">
           {subjects.map(subject => {
             const count = books.filter(b => b.genre === subject.name).length;
             return (
               <div 
                 key={subject.name} 
-                className="subject-card" 
-                style={{ background: subject.color, color: subject.textColor || 'inherit' }}
+                className="subject-card glass-panel" 
+                style={{ '--subject-color': subject.color, '--subject-text': subject.textColor || 'inherit' }}
                 onClick={() => handleGenreClick(subject.name)}
               >
-                <div className="subject-icon" style={{ color: subject.textColor || 'var(--text-muted)' }}>
+                <div className="subject-icon-wrapper" style={{ color: subject.textColor || 'var(--text-primary)' }}>
                   {subject.icon}
                 </div>
                 <div className="subject-info">
                   <h3>{subject.name}</h3>
-                  <p style={{ color: subject.textColor ? 'rgba(0,0,0,0.6)' : 'var(--text-muted)' }}>
-                    {count} {count === 1 ? 'Book' : 'Books'} available
+                  <p className="subject-count">
+                    {count} {count === 1 ? 'Book' : 'Books'}
                   </p>
                 </div>
+                <div className="subject-hover-glow" style={{ background: subject.color }}></div>
               </div>
             );
           })}
@@ -214,12 +232,12 @@ function Home() {
       </section>
 
       {/* New Books */}
-      <section className="dashboard-section">
+      <section className="dashboard-section relative-section">
         <div className="section-header">
-          <h2>New books</h2>
-          <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
+          <h2>Recently Added</h2>
+          <button className="show-all" onClick={() => navigate('/library')}>Show all <ArrowRight size={14}/></button>
         </div>
-        <div className="horizontal-scroll">
+        <div className="horizontal-scroll hide-scrollbar with-fade">
           {newBooks.length > 0 ? (
             newBooks.map(book => (
               <BookCard key={book.id} book={book} variant="simple" />
@@ -235,12 +253,12 @@ function Home() {
 
       {/* Top Authors */}
       {topAuthors.length > 0 && (
-        <section className="dashboard-section fade-in fade-in-delay-3">
+        <section className="dashboard-section relative-section fade-in fade-in-delay-3">
           <div className="section-header">
-            <h2>Top Authors</h2>
-            <button className="show-all" onClick={() => navigate('/library')}>Show all</button>
+            <h2>Favorite Authors</h2>
+            <button className="show-all" onClick={() => navigate('/library')}>Show all <ArrowRight size={14}/></button>
           </div>
-          <div className="horizontal-scroll">
+          <div className="horizontal-scroll hide-scrollbar with-fade">
             {topAuthors.map(author => (
               <div key={author.name} className="author-card-large card" onClick={() => navigate(`/library?search=${encodeURIComponent(author.name)}`)}>
                 <img src={author.avatar} alt={author.name} className="author-avatar-large" />
