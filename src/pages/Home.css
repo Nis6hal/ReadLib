@@ -144,7 +144,7 @@
 /* Bento Stats Grid */
 .stats-bento-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   grid-template-rows: auto;
   gap: 1.25rem;
 }
@@ -169,21 +169,6 @@
   border-color: rgba(255, 255, 255, 0.1);
 }
 
-.bento-wide {
-  grid-column: span 2;
-  justify-content: space-between;
-}
-
-.target-header {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.target-text {
-  display: flex;
-  flex-direction: column;
-}
 
 .stat-icon {
   width: 48px;
@@ -331,7 +316,6 @@
 
 @media (max-width: 640px) {
   .stats-bento-grid { grid-template-columns: 1fr; }
-  .bento-wide { grid-column: span 1; }
   .heatmap-grid { grid-template-columns: repeat(7, 1fr); }
 }
 

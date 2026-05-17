@@ -167,14 +167,10 @@ function Home() {
           <div className="stat-value">{streak}</div>
           <div className="stat-label">Day Streak</div>
         </div>
-        <div className="bento-card stat-card target bento-wide">
-          <div className="target-header">
-            <div className="stat-icon target"><Target size={24} /></div>
-            <div className="target-text">
-              <div className="stat-label">Yearly Goal</div>
-              <div className="stat-value">{booksReadThisYear} / {yearlyGoal}</div>
-            </div>
-          </div>
+        <div className="bento-card stat-card target">
+          <div className="stat-icon target"><Target size={24} /></div>
+          <div className="stat-value">{booksReadThisYear}/{yearlyGoal}</div>
+          <div className="stat-label">Yearly Goal</div>
           <div className="stat-progress">
             <div className="stat-progress-bar glowing" style={{ width: `${goalProgress}%` }}></div>
           </div>
