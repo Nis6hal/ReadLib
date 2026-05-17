@@ -485,10 +485,9 @@
 .book-info-simple h3 {
   font-size: 0.85rem;
   font-weight: 600;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
   margin-bottom: 0.2rem;
   color: var(--text-primary);
 }
@@ -496,6 +495,9 @@
 .book-info-simple p {
   font-size: 0.75rem;
   color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .favorite-btn {
