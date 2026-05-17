@@ -423,11 +423,20 @@
 /* Simple Variant (for dashboard) */
 .book-card-simple {
   flex: 0 0 130px;
+  width: 130px;
+  max-width: 130px;
   cursor: pointer;
   transition: transform 0.2s ease;
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+.book-info-simple {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .book-card-simple:hover {
