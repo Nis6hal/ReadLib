@@ -64,7 +64,7 @@ function ReadingHeatmap({ history }) {
 }
 
 function Home() {
-  const { books, loading, selectDirectory, readingHistory, yearlyGoal, calculateStreak } = useLibrary();
+  const { books, loading, selectDirectory, readingHistory, yearlyGoal, calculateStreak, userName } = useLibrary();
   const navigate = useNavigate();
 
   const streak = calculateStreak();
@@ -146,7 +146,7 @@ function Home() {
       
       <header className="dashboard-header">
         <div className="greeting-wrapper">
-          <h1 className="greeting-title">{greeting}, Reader</h1>
+          <h1 className="greeting-title">{greeting}, {userName || 'Reader'}</h1>
           <p className="greeting-date">{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</p>
         </div>
       </header>
