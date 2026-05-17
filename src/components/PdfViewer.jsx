@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer, X as CloseIcon, Search } from 'lucide-react';
+import { ArrowLeft, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize, BookOpen, Layout, Scroll, Sun, Moon, Coffee, Timer } from 'lucide-react';
 import * as pdfjsLib from 'pdfjs-dist';
 import { useLibrary } from '../context/LibraryContext';
 import { verifyPermission } from '../services/db';
@@ -31,9 +31,6 @@ function PdfViewer() {
   const [readerTheme, setReaderTheme] = useState('light'); // 'light', 'sepia', 'night'
   const [pageInput, setPageInput] = useState('1');
   const [sessionSeconds, setSessionSeconds] = useState(0);
-  const [showSearch, setShowSearch] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
   const renderingRef = useRef(false);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
@@ -241,38 +238,6 @@ function PdfViewer() {
 
   const zoomIn = useCallback(() => setScale(s => Math.min(3, +(s + 0.2).toFixed(1))), []);
   const zoomOut = useCallback(() => setScale(s => Math.max(0.5, +(s - 0.2).toFixed(1))), []);
-  
-  const handleSearch = async (e) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    if (!query || query.length < 3 || !pdfDoc) {
-      setSearchResults([]);
-      return;
-    }
-    
-    // Use a small delay to prevent UI freezing on every keystroke
-    if (window.searchTimeout) clearTimeout(window.searchTimeout);
-    window.searchTimeout = setTimeout(async () => {
-      const results = [];
-      const limit = Math.min(totalPages, 150); // Search up to 150 pages
-      for (let i = 1; i <= limit; i++) {
-        const page = await pdfDoc.getPage(i);
-        const textContent = await page.getTextContent();
-        const text = textContent.items.map(item => item.str).join(' ');
-        if (text.toLowerCase().includes(query.toLowerCase())) {
-          results.push({ 
-            page: i, 
-            snippet: text.toLowerCase().split(query.toLowerCase())[0].slice(-30) + 
-                     query + 
-                     text.toLowerCase().split(query.toLowerCase())[1].slice(0, 30)
-          });
-          if (results.length > 15) break; 
-        }
-      }
-      setSearchResults(results);
-    }, 400);
-  };
-
 
   const fitToWidth = useCallback(async () => {
     if (!pdfDoc) return;
@@ -476,10 +441,6 @@ function PdfViewer() {
 
         <div className="pdf-toolbar-right">
           <div className="toolbar-group">
-            <button className={`btn btn-icon ${showSearch ? 'active' : ''}`} onClick={() => setShowSearch(!showSearch)} title="Search"><Search size={18} /></button>
-          </div>
-          <div className="toolbar-divider"></div>
-          <div className="toolbar-group">
             <button className={`btn btn-icon ${viewMode === 'single' ? 'active' : ''}`} onClick={() => setViewMode('single')} title="Single Page"><Layout size={18} /></button>
             <button className={`btn btn-icon ${viewMode === 'vertical' ? 'active' : ''}`} onClick={() => setViewMode('vertical')} title="Vertical Scroll"><Scroll size={18} /></button>
           </div>
@@ -507,33 +468,6 @@ function PdfViewer() {
 
       <div className="pdf-content-area">
         {/* Side Panels */}
-
-        <div className={`pdf-side-panel search-panel ${showSearch ? 'open' : ''}`}>
-          <div className="panel-header">
-            <h3>Search</h3>
-            <button className="btn-icon" onClick={() => setShowSearch(false)}><CloseIcon size={18} /></button>
-          </div>
-          <div className="panel-content">
-            <div className="search-input-wrapper">
-              <Search size={16} className="search-icon" />
-              <input 
-                type="text" 
-                placeholder="Find in document..." 
-                value={searchQuery}
-                onChange={handleSearch}
-                autoFocus
-              />
-            </div>
-            <div className="search-results">
-              {searchResults.map((res, i) => (
-                <div key={i} className="search-result-item" onClick={() => { jumpToPage(res.page); setShowSearch(false); }}>
-                  <div className="res-page">Page {res.page}</div>
-                  <div className="res-snippet">...{res.snippet}...</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
 
 
         {viewMode === 'single' ? (
