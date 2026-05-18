@@ -2,7 +2,7 @@
   display: flex;
   flex-direction: column;
   padding: 0;
-  overflow: hidden;
+  overflow: visible;
   height: 100%;
   cursor: default;
   transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
@@ -20,6 +20,8 @@
   justify-content: center;
   position: relative;
   border-bottom: 1px solid var(--glass-border);
+  border-top-left-radius: var(--radius-md);
+  border-top-right-radius: var(--radius-md);
   cursor: pointer;
   overflow: hidden;
   perspective: 1000px;
@@ -165,6 +167,43 @@
 }
 
 /* Inline Edit Styles */
+.book-card .book-info {
+  position: relative;
+}
+
+.book-card .inline-edit {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--bg-secondary);
+  padding: 0.75rem 1.15rem;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  border-top: 1px solid var(--glass-border);
+}
+
+.book-card .inline-edit .edit-input {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.book-card .inline-edit .edit-actions {
+  margin-top: 0.1rem;
+  gap: 0.35rem;
+}
+
+.book-card .inline-edit .edit-actions .btn-sm {
+  padding: 0.25rem 0.5rem !important;
+  font-size: 0.7rem !important;
+  flex: 1;
+}
+
 .inline-edit {
   display: flex;
   flex-direction: column;
