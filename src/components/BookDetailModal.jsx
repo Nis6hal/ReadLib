@@ -55,7 +55,13 @@ function BookDetailModal({ book, onClose }) {
     setTimeout(onClose, 250);
   };
 
-  const handleRead = () => navigate(`/read/${encodeURIComponent(book.id)}`);
+  const handleRead = () => {
+    if (book.fileMissing) {
+      addToast('File is missing from your local folder. Reading record preserved.', 'info');
+      return;
+    }
+    navigate(`/read/${encodeURIComponent(book.id)}`);
+  };
 
   const changeCategory = async (newCategory) => {
     if (book.category === newCategory) return;
@@ -209,6 +215,23 @@ function BookDetailModal({ book, onClose }) {
                 <p className="modal-author editable-author" onClick={() => setEditingAuthor(true)} title="Click to edit">
                   by {book.author} <Edit2 size={12} className="edit-hint-icon" />
                 </p>
+              )}
+
+              {book.fileMissing && (
+                <div style={{
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: 'var(--radius-sm)',
+                  padding: '0.5rem 0.75rem',
+                  fontSize: '0.8rem',
+                  color: '#f87171',
+                  margin: '0.5rem 0 0.75rem 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.4rem'
+                }}>
+                  ⚠️ Physical file has been deleted or moved, but your reading history is preserved.
+                </div>
               )}
 
               <div className="modal-meta-row">

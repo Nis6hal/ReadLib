@@ -64,6 +64,11 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
       setShowModal(true);
       return;
     }
+    if (book.fileMissing) {
+      addToast('File is missing from your local folder. Reading record preserved.', 'info');
+      setShowModal(true);
+      return;
+    }
     navigate(`/read/${encodeURIComponent(book.id)}`);
   };
 
@@ -174,6 +179,9 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
           {book.progress > 0 && (
             <div className="progress-badge">{Math.round(book.progress)}%</div>
           )}
+          {book.fileMissing && (
+            <div className="missing-badge" style={{ position: 'absolute', top: '0.5rem', left: '0.5rem', background: '#ef4444', color: '#fff', padding: '0.15rem 0.4rem', fontSize: '0.65rem', fontWeight: 600, borderRadius: 'var(--radius-sm)', zIndex: 5 }}>Missing File</div>
+          )}
         </div>
         <div className="book-info-simple">
           <h3 title={book.title}>{book.title}</h3>
@@ -219,7 +227,12 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
         </div>
 
         <div className="book-list-meta">
-          <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
+          <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
+            <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
+            {book.fileMissing && (
+              <span className="badge badge-missing" style={{ background: '#ef4444', color: '#fff' }}>Missing File</span>
+            )}
+          </div>
           <div className="list-progress">
             <div className="progress-bg">
               <div className="progress-fill" style={{ width: `${progressPercent}%`, background: `linear-gradient(90deg, ${color1}, ${color2})` }}></div>
@@ -273,6 +286,9 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
         )}
         <div className="category-badge">
           <span className={`badge badge-${book.category.toLowerCase()}`}>{book.category}</span>
+          {book.fileMissing && (
+            <span className="badge badge-missing" style={{ background: '#ef4444', color: '#fff', marginLeft: '0.35rem' }}>Missing File</span>
+          )}
         </div>
         <button 
           className={`favorite-btn ${book.isFavorite ? 'active' : ''}`}

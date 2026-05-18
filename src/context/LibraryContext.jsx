@@ -206,15 +206,25 @@ export function LibraryProvider({ children }) {
           await saveBook(newBook);
           newBooksList.push(newBook);
           addedCount++;
+        } else {
+          // If the book already exists, re-link the file handle if it was marked as missing
+          const existingBook = newBooksList.find(b => b.id === id);
+          if (existingBook && (existingBook.fileMissing || !existingBook.fileHandle)) {
+            existingBook.fileHandle = entry;
+            existingBook.fileMissing = false;
+            await saveBook(existingBook);
+            newBooksList = newBooksList.map(b => b.id === id ? existingBook : b);
+          }
         }
       }
     }
 
-    // Identify books to remove (only if they are NOT manual entries)
-    const booksToRemove = currentBooks.filter(b => !b.isManual && !foundIds.has(b.id));
-    for (const book of booksToRemove) {
-      await deleteBookDB(book.id);
-      newBooksList = newBooksList.filter(b => b.id !== book.id);
+    // Mark missing books as fileMissing: true instead of deleting them from database
+    const missingBooks = currentBooks.filter(b => !b.isManual && !b.fileMissing && !foundIds.has(b.id));
+    for (const book of missingBooks) {
+      const updated = { ...book, fileMissing: true, fileHandle: null };
+      await saveBook(updated);
+      newBooksList = newBooksList.map(b => b.id === book.id ? updated : b);
     }
 
     setBooks(newBooksList);
