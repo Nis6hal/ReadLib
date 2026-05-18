@@ -389,7 +389,7 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
             {showMenu && createPortal(
               <div
                 ref={menuRef}
-                className="dropdown-menu glass-panel"
+                className="dropdown-menu"
                 style={{
                   position: 'fixed',
                   bottom: `${menuPos.bottom}px`,
