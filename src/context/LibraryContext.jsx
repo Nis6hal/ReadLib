@@ -303,6 +303,25 @@ export function LibraryProvider({ children }) {
     setBooks(prev => prev.filter(b => b.id !== bookId));
   };
 
+  const findBookById = (id) => {
+    if (!id) return null;
+    const decodedId = decodeURIComponent(id);
+    // Try exact match first
+    let found = books.find(b => b.id === id || b.id === decodedId);
+    if (found) return found;
+    
+    // Try normalized match (treating '+' and ' ' as equivalent)
+    const normId = id.replace(/\+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    const normDecodedId = decodedId.replace(/\+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+    
+    found = books.find(b => {
+      const normBookId = b.id.replace(/\+/g, ' ').replace(/\s+/g, ' ').trim().toLowerCase();
+      return normBookId === normId || normBookId === normDecodedId;
+    });
+    
+    return found;
+  };
+
   const stats = {
     total: books.length,
     planned: books.filter(b => b.category === 'Planned').length,
@@ -359,7 +378,8 @@ export function LibraryProvider({ children }) {
       logReadingSession,
       addManualBook,
       fetchBookMetadata,
-      setCollections
+      setCollections,
+      findBookById
     }}>
       {children}
     </LibraryContext.Provider>

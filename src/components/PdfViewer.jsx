@@ -15,7 +15,7 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
 function PdfViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { books, updateBook, logReadingSession } = useLibrary();
+  const { findBookById, updateBook, logReadingSession } = useLibrary();
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
@@ -48,9 +48,8 @@ function PdfViewer() {
   };
 
 
-  // Find the book - use decodeURIComponent for encoded IDs
-  const decodedId = decodeURIComponent(id);
-  const book = books.find(b => b.id === decodedId || b.id === id);
+  // Find the book using robust helper
+  const book = findBookById(id);
   bookRef.current = book;
 
 

@@ -242,7 +242,7 @@ function Library() {
             <BookCard 
               key={book.id} 
               book={book} 
-              variant={viewMode === 'list' ? 'list' : 'full'}
+              viewMode={viewMode}
             />
           ))}
         </div>

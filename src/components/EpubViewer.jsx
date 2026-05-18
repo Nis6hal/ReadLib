@@ -9,7 +9,7 @@ import './EpubViewer.css';
 function EpubViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { books, updateBook } = useLibrary();
+  const { findBookById, updateBook } = useLibrary();
   const viewerRef = useRef(null);
   const bookRef = useRef(null);
   const renditionRef = useRef(null);
@@ -19,8 +19,7 @@ function EpubViewer() {
   const [readerTheme, setReaderTheme] = useState('light');
   const [fontSize, setFontSize] = useState(100);
 
-  const decodedId = decodeURIComponent(id);
-  const bookData = books.find(b => b.id === decodedId || b.id === id);
+  const bookData = findBookById(id);
 
   useEffect(() => {
     if (!bookData || !bookData.fileHandle) {

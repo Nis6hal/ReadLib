@@ -10,10 +10,9 @@ import { useLibrary } from '../context/LibraryContext';
  */
 function Reader() {
   const { id } = useParams();
-  const { books } = useLibrary();
+  const { findBookById } = useLibrary();
   
-  const decodedId = decodeURIComponent(id);
-  const book = books.find(b => b.id === decodedId || b.id === id);
+  const book = findBookById(id);
   
   if (!book) {
     return <div className="p-10 text-center">Book not found in library.</div>;
