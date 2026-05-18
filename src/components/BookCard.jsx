@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Play, Check, BookOpen, Plus, X, Trash2, Pencil, Save, Star } from 'lucide-react';
 import { useLibrary, GENRES } from '../context/LibraryContext';
@@ -55,7 +56,9 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const menuRef = useRef(null);
+  const menuBtnRef = useRef(null);
   const editTitleRef = useRef(null);
+  const [menuPos, setMenuPos] = useState({ bottom: 0, right: 0 });
 
   const handleRead = (e) => {
     e?.stopPropagation();
@@ -147,11 +150,25 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
     addToast(`"${book.title}" removed from library`, 'info');
   };
 
+  // Position dropdown via portal when opened
+  useEffect(() => {
+    if (showMenu && menuBtnRef.current) {
+      const rect = menuBtnRef.current.getBoundingClientRect();
+      setMenuPos({
+        bottom: window.innerHeight - rect.top + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [showMenu]);
+
   // Close dropdown on outside click
   useEffect(() => {
     if (!showMenu) return;
     const handleClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) {
+      if (
+        menuRef.current && !menuRef.current.contains(e.target) &&
+        menuBtnRef.current && !menuBtnRef.current.contains(e.target)
+      ) {
         setShowMenu(false);
       }
     };
@@ -359,8 +376,9 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
             <Play size={14} fill="currentColor" /> Read
           </button>
 
-          <div className="dropdown" ref={menuRef}>
+          <div>
             <button
+              ref={menuBtnRef}
               className="btn-icon-sm"
               onClick={() => setShowMenu(!showMenu)}
               title="More options"
@@ -368,8 +386,17 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
               {showMenu ? <X size={16} /> : <Plus size={16} />}
             </button>
 
-            {showMenu && (
-              <div className="dropdown-menu glass-panel">
+            {showMenu && createPortal(
+              <div
+                ref={menuRef}
+                className="dropdown-menu glass-panel"
+                style={{
+                  position: 'fixed',
+                  bottom: `${menuPos.bottom}px`,
+                  right: `${menuPos.right}px`,
+                  zIndex: 9999,
+                }}
+              >
                 <div className="dropdown-header">Move to...</div>
                 {['Planned', 'Reading', 'Completed'].map(cat => (
                   <button
@@ -381,13 +408,13 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
                     {cat}
                   </button>
                 ))}
-                
+
                 <div className="dropdown-divider"></div>
                 <div className="dropdown-header">Genre</div>
                 <div className="genre-grid">
                   {GENRES.map(g => (
-                    <button 
-                      key={g} 
+                    <button
+                      key={g}
                       className={`genre-item ${book.genre === g ? 'active' : ''}`}
                       onClick={() => changeGenre(g)}
                       title={g}
@@ -408,7 +435,8 @@ function BookCard({ book: initialBook, viewMode = 'grid', variant = 'default' })
                 <button className={`dropdown-item dropdown-item-danger ${confirmDelete ? 'confirm' : ''}`} onClick={handleDelete}>
                   <Trash2 size={14} /> {confirmDelete ? 'Confirm Delete?' : 'Delete'}
                 </button>
-              </div>
+              </div>,
+              document.body
             )}
           </div>
         </div>
