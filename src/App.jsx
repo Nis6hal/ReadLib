@@ -1,17 +1,21 @@
-import React from 'react';
-import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { LibraryProvider } from './context/LibraryContext';
-import { ToastProvider } from './components/Toast';
-import Sidebar from './components/Sidebar';
-import './App.css';
-import Home from './pages/Home';
-import Library from './pages/Library';
-import ContinueReading from './pages/ContinueReading';
-import Profile from './pages/Profile';
-import Settings from './pages/Settings';
-import Reader from './components/Reader';
+import {
+  HashRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { LibraryProvider } from "./context/LibraryContext";
+import { ToastProvider } from "./components/Toast";
+import Sidebar from "./components/Sidebar";
+import "./App.css";
+import Home from "./pages/Home";
+import Library from "./pages/Library";
+import ContinueReading from "./pages/ContinueReading";
+import Profile from "./pages/Profile";
+import Settings from "./pages/Settings";
+import Reader from "./components/Reader";
 
-import TopBar from './components/TopBar';
+import TopBar from "./components/TopBar";
 
 function App() {
   return (

@@ -1,5 +1,6 @@
 import { app, BrowserWindow } from "electron";
 import path from "path";
+import process from "node:process";
 import { fileURLToPath } from "url";
 
 // Because we have type: "module" in package.json, we need to construct __dirname

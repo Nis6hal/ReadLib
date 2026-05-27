@@ -1,8 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import { User, BookOpen, CheckCircle, Clock, TrendingUp, Award, Target, BarChart3, Flame } from 'lucide-react';
-import { useLibrary } from '../context/LibraryContext';
-import '../App.css';
-import './Profile.css';
+import { useEffect, useState } from "react";
+import {
+  User,
+  BookOpen,
+  CheckCircle,
+  TrendingUp,
+  Target,
+  BarChart3,
+  Flame,
+} from "lucide-react";
+import { useLibrary } from "../context/LibraryContext";
+import "../App.css";
+import "./Profile.css";
 
 function Profile() {
   const { books, stats } = useLibrary();
@@ -14,24 +22,31 @@ function Profile() {
     return () => clearTimeout(timer);
   }, []);
 
-  const completionRate = stats.total > 0 
-    ? Math.round((stats.completed / stats.total) * 100) 
-    : 0;
+  const completionRate =
+    stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
 
-  const avgProgress = stats.total > 0
-    ? Math.round(books.reduce((acc, b) => acc + (b.progress || 0), 0) / stats.total)
-    : 0;
+  const avgProgress =
+    stats.total > 0
+      ? Math.round(
+          books.reduce((acc, b) => acc + (b.progress || 0), 0) / stats.total,
+        )
+      : 0;
 
   // Distribution for visual bar chart
-  const maxCategory = Math.max(stats.planned, stats.reading, stats.completed, 1);
+  const maxCategory = Math.max(
+    stats.planned,
+    stats.reading,
+    stats.completed,
+    1,
+  );
 
   // Get reading rank
   const getRank = () => {
-    if (stats.completed >= 20) return { label: 'Master Reader', emoji: '👑' };
-    if (stats.completed >= 10) return { label: 'Avid Reader', emoji: '🌟' };
-    if (stats.completed >= 5) return { label: 'Bookworm', emoji: '📖' };
-    if (stats.completed >= 1) return { label: 'Getting Started', emoji: '🌱' };
-    return { label: 'Newcomer', emoji: '✨' };
+    if (stats.completed >= 20) return { label: "Master Reader", emoji: "👑" };
+    if (stats.completed >= 10) return { label: "Avid Reader", emoji: "🌟" };
+    if (stats.completed >= 5) return { label: "Bookworm", emoji: "📖" };
+    if (stats.completed >= 1) return { label: "Getting Started", emoji: "🌱" };
+    return { label: "Newcomer", emoji: "✨" };
   };
 
   const rank = getRank();
@@ -52,8 +67,8 @@ function Profile() {
           <h2>Book Lover</h2>
           <p className="profile-hero-sub">
             {stats.total > 0
-              ? `You've added ${stats.total} book${stats.total !== 1 ? 's' : ''} to your library`
-              : 'Start adding books to track your reading journey'}
+              ? `You've added ${stats.total} book${stats.total !== 1 ? "s" : ""} to your library`
+              : "Start adding books to track your reading journey"}
           </p>
         </div>
         <div className="profile-hero-badge">
@@ -65,22 +80,30 @@ function Profile() {
       {/* Stats Overview */}
       <div className="stats-row fade-in fade-in-delay-2">
         <div className="card stat-card accent">
-          <div className="stat-icon accent"><Target size={20} /></div>
+          <div className="stat-icon accent">
+            <Target size={20} />
+          </div>
           <span className="stat-value">{completionRate}%</span>
           <span className="stat-label">Completion Rate</span>
         </div>
         <div className="card stat-card success">
-          <div className="stat-icon success"><CheckCircle size={20} /></div>
+          <div className="stat-icon success">
+            <CheckCircle size={20} />
+          </div>
           <span className="stat-value">{stats.completed}</span>
           <span className="stat-label">Books Completed</span>
         </div>
         <div className="card stat-card warning">
-          <div className="stat-icon warning"><TrendingUp size={20} /></div>
+          <div className="stat-icon warning">
+            <TrendingUp size={20} />
+          </div>
           <span className="stat-value">{avgProgress}%</span>
           <span className="stat-label">Avg. Progress</span>
         </div>
         <div className="card stat-card danger">
-          <div className="stat-icon danger"><Flame size={20} /></div>
+          <div className="stat-icon danger">
+            <Flame size={20} />
+          </div>
           <span className="stat-value">{stats.reading}</span>
           <span className="stat-label">In Progress</span>
         </div>
@@ -88,14 +111,20 @@ function Profile() {
 
       {/* Category Distribution */}
       <div className="card profile-chart-card fade-in fade-in-delay-3">
-        <h3 className="section-title"><BarChart3 size={20} /> Category Distribution</h3>
+        <h3 className="section-title">
+          <BarChart3 size={20} /> Category Distribution
+        </h3>
         <div className="category-bars">
           <div className="category-bar-row">
             <span className="category-bar-label">Planned</span>
             <div className="category-bar-track">
-              <div 
-                className="category-bar-fill planned" 
-                style={{ width: animated ? `${(stats.planned / maxCategory) * 100}%` : '0%' }}
+              <div
+                className="category-bar-fill planned"
+                style={{
+                  width: animated
+                    ? `${(stats.planned / maxCategory) * 100}%`
+                    : "0%",
+                }}
               ></div>
             </div>
             <span className="category-bar-count">{stats.planned}</span>
@@ -103,9 +132,13 @@ function Profile() {
           <div className="category-bar-row">
             <span className="category-bar-label">Reading</span>
             <div className="category-bar-track">
-              <div 
-                className="category-bar-fill reading" 
-                style={{ width: animated ? `${(stats.reading / maxCategory) * 100}%` : '0%' }}
+              <div
+                className="category-bar-fill reading"
+                style={{
+                  width: animated
+                    ? `${(stats.reading / maxCategory) * 100}%`
+                    : "0%",
+                }}
               ></div>
             </div>
             <span className="category-bar-count">{stats.reading}</span>
@@ -113,9 +146,13 @@ function Profile() {
           <div className="category-bar-row">
             <span className="category-bar-label">Completed</span>
             <div className="category-bar-track">
-              <div 
-                className="category-bar-fill completed" 
-                style={{ width: animated ? `${(stats.completed / maxCategory) * 100}%` : '0%' }}
+              <div
+                className="category-bar-fill completed"
+                style={{
+                  width: animated
+                    ? `${(stats.completed / maxCategory) * 100}%`
+                    : "0%",
+                }}
               ></div>
             </div>
             <span className="category-bar-count">{stats.completed}</span>
@@ -125,7 +162,9 @@ function Profile() {
 
       {/* Reading Streak / Fun facts */}
       <div className="card profile-facts fade-in fade-in-delay-4">
-        <h3 className="section-title"><BookOpen size={20} /> Quick Facts</h3>
+        <h3 className="section-title">
+          <BookOpen size={20} /> Quick Facts
+        </h3>
         <div className="facts-grid">
           <div className="fact-item">
             <span className="fact-emoji">📚</span>

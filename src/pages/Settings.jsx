@@ -1,12 +1,35 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, FolderOpen, Sun, Moon, Trash2, RefreshCw, Info, Database, Palette, HardDrive, Target } from 'lucide-react';
-import { useLibrary } from '../context/LibraryContext';
-import { useToast } from '../components/Toast';
-import '../App.css';
-import './Settings.css';
+import { useState } from "react";
+import {
+  Settings as SettingsIcon,
+  FolderOpen,
+  Sun,
+  Moon,
+  Trash2,
+  RefreshCw,
+  Info,
+  Database,
+  Palette,
+  HardDrive,
+  Target,
+} from "lucide-react";
+import { useLibrary } from "../context/LibraryContext";
+import { useToast } from "../components/Toast";
+import "../App.css";
+import "./Settings.css";
 
 function Settings() {
-  const { dirHandle, selectDirectory, scanDirectory, theme, toggleTheme, books, userName, updateUserName, yearlyGoal, updateYearlyGoal } = useLibrary();
+  const {
+    dirHandle,
+    selectDirectory,
+    scanDirectory,
+    theme,
+    toggleTheme,
+    books,
+    userName,
+    updateUserName,
+    yearlyGoal,
+    updateYearlyGoal,
+  } = useLibrary();
   const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
 
@@ -15,7 +38,7 @@ function Settings() {
       setIsScanning(true);
       try {
         await scanDirectory(dirHandle);
-        addToast('Library rescanned successfully', 'success');
+        addToast("Library rescanned successfully", "success");
       } finally {
         setIsScanning(false);
       }
@@ -23,9 +46,13 @@ function Settings() {
   };
 
   const handleClearData = async () => {
-    if (window.confirm('Are you sure? This will clear all saved book metadata and settings from this browser.')) {
+    if (
+      window.confirm(
+        "Are you sure? This will clear all saved book metadata and settings from this browser.",
+      )
+    ) {
       const { indexedDB } = window;
-      indexedDB.deleteDatabase('ReadLibDB');
+      indexedDB.deleteDatabase("ReadLibDB");
       window.location.reload();
     }
   };
@@ -86,24 +113,30 @@ function Settings() {
           )}
         </div>
         <div className="settings-actions">
-          <button className="btn btn-primary" onClick={selectDirectory} id="select-folder-btn">
-            <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Select Folder'}
+          <button
+            className="btn btn-primary"
+            onClick={selectDirectory}
+            id="select-folder-btn"
+          >
+            <FolderOpen size={16} />{" "}
+            {dirHandle ? "Change Folder" : "Select Folder"}
           </button>
           {dirHandle && (
-            <button 
-              className="btn btn-secondary" 
-              onClick={handleRescan} 
+            <button
+              className="btn btn-secondary"
+              onClick={handleRescan}
               disabled={isScanning}
               id="rescan-btn"
             >
-              <RefreshCw size={16} className={isScanning ? 'spin-icon' : ''} /> 
-              {isScanning ? 'Scanning...' : 'Rescan'}
+              <RefreshCw size={16} className={isScanning ? "spin-icon" : ""} />
+              {isScanning ? "Scanning..." : "Rescan"}
             </button>
           )}
         </div>
         {!window.showDirectoryPicker && (
           <div className="compat-warning">
-            ⚠️ Folder selection requires a Chromium-based browser (Chrome, Edge, Brave). Firefox and iOS Safari are not supported.
+            ⚠️ Folder selection requires a Chromium-based browser (Chrome, Edge,
+            Brave). Firefox and iOS Safari are not supported.
           </div>
         )}
       </div>
@@ -116,17 +149,27 @@ function Settings() {
           </div>
           <div>
             <h3 className="settings-section-title">Appearance</h3>
-            <p className="settings-desc">Toggle between dark and light themes.</p>
+            <p className="settings-desc">
+              Toggle between dark and light themes.
+            </p>
           </div>
         </div>
         <div className="theme-toggle-container">
-          <button className="theme-toggle-btn" onClick={toggleTheme} id="theme-toggle-btn">
-            <div className={`theme-toggle-track ${theme === 'light' ? 'light' : ''}`}>
+          <button
+            className="theme-toggle-btn"
+            onClick={toggleTheme}
+            id="theme-toggle-btn"
+          >
+            <div
+              className={`theme-toggle-track ${theme === "light" ? "light" : ""}`}
+            >
               <div className="theme-toggle-thumb">
-                {theme === 'dark' ? <Moon size={12} /> : <Sun size={12} />}
+                {theme === "dark" ? <Moon size={12} /> : <Sun size={12} />}
               </div>
             </div>
-            <span className="theme-toggle-label">{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+            <span className="theme-toggle-label">
+              {theme === "dark" ? "Dark Mode" : "Light Mode"}
+            </span>
           </button>
         </div>
       </div>
@@ -150,7 +193,11 @@ function Settings() {
             <span className="data-stat-label">books tracked</span>
           </div>
         </div>
-        <button className="btn btn-danger" onClick={handleClearData} id="clear-data-btn">
+        <button
+          className="btn btn-danger"
+          onClick={handleClearData}
+          id="clear-data-btn"
+        >
           <Trash2 size={16} /> Clear All Data
         </button>
       </div>
@@ -163,7 +210,9 @@ function Settings() {
           </div>
           <div>
             <h3 className="settings-section-title">Yearly Reading Goal</h3>
-            <p className="settings-desc">How many books do you want to read this year?</p>
+            <p className="settings-desc">
+              How many books do you want to read this year?
+            </p>
           </div>
         </div>
         <div className="goal-input-row">
@@ -177,7 +226,7 @@ function Settings() {
               const val = parseInt(e.target.value);
               if (val >= 1 && val <= 365) {
                 await updateYearlyGoal(val);
-                addToast(`Goal updated to ${val} books 🎯`, 'success');
+                addToast(`Goal updated to ${val} books 🎯`, "success");
               }
             }}
           />

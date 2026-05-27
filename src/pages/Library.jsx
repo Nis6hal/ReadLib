@@ -1,98 +1,106 @@
-import React, { useState, useMemo } from 'react';
-import { Library as LibraryIcon, Search, FolderOpen, RefreshCw, ArrowUpDown, LayoutGrid, List, Plus } from 'lucide-react';
-import { useLibrary, GENRES } from '../context/LibraryContext';
-import { useToast } from '../components/Toast';
-import BookCard from '../components/BookCard';
-import { BookCardSkeleton } from '../components/Skeleton';
-import AddManualBookModal from '../components/AddManualBookModal';
-import '../App.css';
-import './Library.css';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useMemo } from "react";
+import {
+  Library as LibraryIcon,
+  Search,
+  FolderOpen,
+  RefreshCw,
+  ArrowUpDown,
+  LayoutGrid,
+  List,
+  Plus,
+} from "lucide-react";
+import { useLibrary, GENRES } from "../context/LibraryContext";
+import { useToast } from "../components/Toast";
+import BookCard from "../components/BookCard";
+import { BookCardSkeleton } from "../components/Skeleton";
+import AddManualBookModal from "../components/AddManualBookModal";
+import "../App.css";
+import "./Library.css";
+import { useSearchParams } from "react-router-dom";
 
 const SORT_OPTIONS = [
-  { value: 'title-asc', label: 'Title A→Z' },
-  { value: 'title-desc', label: 'Title Z→A' },
-  { value: 'added-desc', label: 'Recently Added' },
-  { value: 'added-asc', label: 'Oldest First' },
-  { value: 'progress-desc', label: 'Most Progress' },
-  { value: 'progress-asc', label: 'Least Progress' },
-  { value: 'lastread-desc', label: 'Last Read' },
+  { value: "title-asc", label: "Title A→Z" },
+  { value: "title-desc", label: "Title Z→A" },
+  { value: "added-desc", label: "Recently Added" },
+  { value: "added-asc", label: "Oldest First" },
+  { value: "progress-desc", label: "Most Progress" },
+  { value: "progress-asc", label: "Least Progress" },
+  { value: "lastread-desc", label: "Last Read" },
 ];
 
 function Library() {
-  const { books, loading, selectDirectory, scanDirectory, dirHandle } = useLibrary();
+  const { books, loading, selectDirectory, scanDirectory, dirHandle } =
+    useLibrary();
   const { addToast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialFilter = searchParams.get('genre') || 'All';
-  const initialSearch = searchParams.get('search') || '';
-  
+  const initialFilter = searchParams.get("genre") || "All";
+  const initialSearch = searchParams.get("search") || "";
+
   const [activeFilter, setActiveFilter] = useState(initialFilter);
-  const [activeCollection, setActiveCollection] = useState('All');
+  const [activeCollection, setActiveCollection] = useState("All");
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [isScanning, setIsScanning] = useState(false);
   const [showManualModal, setShowManualModal] = useState(false);
-  const [sortBy, setSortBy] = useState('added-desc');
-  const [viewMode, setViewMode] = useState('grid');
+  const [sortBy, setSortBy] = useState("added-desc");
+  const [viewMode, setViewMode] = useState("grid");
 
-  const genres = ['All', ...GENRES];
+  const genres = ["All", ...GENRES];
   const collections = [
-    { id: 'All', label: 'All Books' },
-    { id: 'Favorites', label: '⭐ Favorites' },
-    { id: 'Must Read', label: '📚 Must Read' },
-    { id: 'Finished', label: '✅ Finished' },
-    ...GENRES.map(g => ({ id: g, label: g }))
+    { id: "All", label: "All Books" },
+    { id: "Favorites", label: "⭐ Favorites" },
+    { id: "Must Read", label: "📚 Must Read" },
+    { id: "Finished", label: "✅ Finished" },
+    ...GENRES.map((g) => ({ id: g, label: g })),
   ];
 
   const filteredBooks = useMemo(() => {
     let result = [...books];
 
     // Filter by genre
-    if (activeFilter !== 'All') {
-      result = result.filter(b => b.genre === activeFilter);
+    if (activeFilter !== "All") {
+      result = result.filter((b) => b.genre === activeFilter);
     }
 
     // Filter by Collection
-    if (activeCollection === 'Favorites') {
-      result = result.filter(b => b.isFavorite);
-    } else if (activeCollection === 'Must Read') {
-      result = result.filter(b => b.category === 'Planned');
-    } else if (activeCollection === 'Finished') {
-      result = result.filter(b => b.category === 'Completed');
+    if (activeCollection === "Favorites") {
+      result = result.filter((b) => b.isFavorite);
+    } else if (activeCollection === "Must Read") {
+      result = result.filter((b) => b.category === "Planned");
+    } else if (activeCollection === "Finished") {
+      result = result.filter((b) => b.category === "Completed");
     }
 
     // Filter by search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       result = result.filter(
-        b =>
+        (b) =>
           b.title.toLowerCase().includes(query) ||
-          b.author.toLowerCase().includes(query)
+          b.author.toLowerCase().includes(query),
       );
     }
 
-
-
     // Sort
-    const [field, direction] = sortBy.split('-');
+    const [field, direction] = sortBy.split("-");
     result.sort((a, b) => {
-      let cmp = 0;
+      let cmp;
       switch (field) {
-        case 'title':
+        case "title":
           cmp = a.title.localeCompare(b.title);
           break;
-        case 'added':
-          cmp = (a.addedAt || '').localeCompare(b.addedAt || '');
+        case "added":
+          cmp = (a.addedAt || "").localeCompare(b.addedAt || "");
           break;
-        case 'progress':
+        case "progress":
           cmp = (a.progress || 0) - (b.progress || 0);
           break;
-        case 'lastread':
-          cmp = (a.lastRead || '').localeCompare(b.lastRead || '');
+        case "lastread":
+          cmp = (a.lastRead || "").localeCompare(b.lastRead || "");
           break;
         default:
           cmp = 0;
       }
-      return direction === 'desc' ? -cmp : cmp;
+      return direction === "desc" ? -cmp : cmp;
     });
 
     return result;
@@ -103,7 +111,7 @@ function Library() {
       setIsScanning(true);
       try {
         await scanDirectory(dirHandle);
-        addToast('Library rescanned successfully', 'success');
+        addToast("Library rescanned successfully", "success");
       } finally {
         setIsScanning(false);
       }
@@ -125,25 +133,26 @@ function Library() {
     e.preventDefault();
     setIsDragging(false);
     if (e.dataTransfer.items.length > 0) {
-      addToast('Importing dropped files...', 'info');
+      addToast("Importing dropped files...", "info");
       setShowManualModal(true);
     }
   };
 
-  const getFilterCount = (filter) => {
-    if (filter === 'All') return books.length;
-    return books.filter(b => b.genre === filter).length;
-  };
-
   return (
-    <div 
-      className={`library-page fade-in ${isDragging ? 'dragging' : ''}`}
+    <div
+      className={`library-page fade-in ${isDragging ? "dragging" : ""}`}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
       <div className="page-header">
-        <h1>{searchQuery ? `Search: ${searchQuery}` : activeFilter !== 'All' ? activeFilter : 'Library'}</h1>
+        <h1>
+          {searchQuery
+            ? `Search: ${searchQuery}`
+            : activeFilter !== "All"
+              ? activeFilter
+              : "Library"}
+        </h1>
         <div className="header-actions-row">
           <div className="header-stats">
             <span>{books.length} Books</span>
@@ -154,28 +163,37 @@ function Library() {
             )}
           </div>
           <div className="header-buttons">
-            <button className="btn btn-secondary" onClick={() => setShowManualModal(true)}>
+            <button
+              className="btn btn-secondary"
+              onClick={() => setShowManualModal(true)}
+            >
               <Plus size={16} /> Manual Entry
             </button>
-            <button className={`btn btn-secondary ${isScanning ? 'loading' : ''}`} onClick={handleRescan} disabled={!dirHandle}>
+            <button
+              className={`btn btn-secondary ${isScanning ? "loading" : ""}`}
+              onClick={handleRescan}
+              disabled={!dirHandle}
+            >
               <RefreshCw size={16} /> Rescan
             </button>
             <button className="btn btn-primary" onClick={selectDirectory}>
-              <FolderOpen size={16} /> {dirHandle ? 'Change Folder' : 'Select Folder'}
+              <FolderOpen size={16} />{" "}
+              {dirHandle ? "Change Folder" : "Select Folder"}
             </button>
           </div>
         </div>
       </div>
 
-      {showManualModal && <AddManualBookModal onClose={() => setShowManualModal(false)} />}
-
+      {showManualModal && (
+        <AddManualBookModal onClose={() => setShowManualModal(false)} />
+      )}
 
       <div className="library-controls fade-in fade-in-delay-1">
         <div className="search-bar">
           <Search size={18} className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search by title or author..." 
+          <input
+            type="text"
+            placeholder="Search by title or author..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -184,10 +202,10 @@ function Library() {
         <div className="filter-scroll">
           <div className="filter-group">
             <span className="filter-label">Collections</span>
-            {collections.map(col => (
-              <button 
-                key={col.id} 
-                className={`filter-tag ${activeCollection === col.id ? 'active' : ''}`}
+            {collections.map((col) => (
+              <button
+                key={col.id}
+                className={`filter-tag ${activeCollection === col.id ? "active" : ""}`}
                 onClick={() => setActiveCollection(col.id)}
               >
                 {col.label}
@@ -197,13 +215,13 @@ function Library() {
           <div className="filter-divider"></div>
           <div className="filter-group">
             <span className="filter-label">Genres</span>
-            {genres.map(genre => (
-              <button 
-                key={genre} 
-                className={`filter-tag ${activeFilter === genre ? 'active' : ''}`}
+            {genres.map((genre) => (
+              <button
+                key={genre}
+                className={`filter-tag ${activeFilter === genre ? "active" : ""}`}
                 onClick={() => {
                   setActiveFilter(genre);
-                  setSearchParams(genre === 'All' ? {} : { genre });
+                  setSearchParams(genre === "All" ? {} : { genre });
                 }}
               >
                 {genre}
@@ -216,16 +234,24 @@ function Library() {
           <div className="sort-control">
             <ArrowUpDown size={16} />
             <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
-              {SORT_OPTIONS.map(opt => (
-                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
               ))}
             </select>
           </div>
           <div className="layout-toggle">
-            <button className={`btn-icon ${viewMode === 'grid' ? 'active' : ''}`} onClick={() => setViewMode('grid')}>
+            <button
+              className={`btn-icon ${viewMode === "grid" ? "active" : ""}`}
+              onClick={() => setViewMode("grid")}
+            >
               <LayoutGrid size={18} />
             </button>
-            <button className={`btn-icon ${viewMode === 'list' ? 'active' : ''}`} onClick={() => setViewMode('list')}>
+            <button
+              className={`btn-icon ${viewMode === "list" ? "active" : ""}`}
+              onClick={() => setViewMode("list")}
+            >
               <List size={18} />
             </button>
           </div>
@@ -233,17 +259,19 @@ function Library() {
       </div>
 
       {loading ? (
-        <div className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}>
-          {[1, 2, 3, 4, 5, 6, 7, 8].map(i => <BookCardSkeleton key={i} />)}
+        <div
+          className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}
+        >
+          {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+            <BookCardSkeleton key={i} />
+          ))}
         </div>
       ) : filteredBooks.length > 0 ? (
-        <div className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}>
+        <div
+          className={`books-container ${viewMode}-view fade-in fade-in-delay-2`}
+        >
           {filteredBooks.map((book) => (
-            <BookCard 
-              key={book.id} 
-              book={book} 
-              viewMode={viewMode}
-            />
+            <BookCard key={book.id} book={book} viewMode={viewMode} />
           ))}
         </div>
       ) : (
@@ -252,7 +280,10 @@ function Library() {
             <LibraryIcon size={48} />
           </div>
           <h3>No books found</h3>
-          <p>Try adjusting your search or filters, or add a new folder to your library.</p>
+          <p>
+            Try adjusting your search or filters, or add a new folder to your
+            library.
+          </p>
           <button className="btn btn-primary" onClick={selectDirectory}>
             Add Folder
           </button>

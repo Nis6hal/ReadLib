@@ -1,10 +1,16 @@
-import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { Home, Library, Download, Mail, Phone, Settings, LogOut, BookOpen, RefreshCw } from 'lucide-react';
-import { useLibrary } from '../context/LibraryContext';
-import { useToast } from './Toast';
-import './Sidebar.css';
-
+import { useState } from "react";
+import { NavLink, useLocation } from "react-router-dom";
+import {
+  Home,
+  Library,
+  Settings,
+  LogOut,
+  BookOpen,
+  RefreshCw,
+} from "lucide-react";
+import { useLibrary } from "../context/LibraryContext";
+import { useToast } from "./Toast";
+import "./Sidebar.css";
 
 function Sidebar() {
   const { scanDirectory, dirHandle } = useLibrary();
@@ -13,26 +19,26 @@ function Sidebar() {
   const location = useLocation();
 
   // Don't show sidebar in reader mode
-  if (location.pathname.startsWith('/read/')) return null;
+  if (location.pathname.startsWith("/read/")) return null;
 
   const navItems = [
-    { to: '/', icon: <Home size={22} />, label: 'Home', end: true },
-    { to: '/library', icon: <Library size={22} />, label: 'Library' },
-    { to: '/reading', icon: <BookOpen size={22} />, label: 'Reading' },
-    { to: '/settings', icon: <Settings size={22} />, label: 'Settings' }
+    { to: "/", icon: <Home size={22} />, label: "Home", end: true },
+    { to: "/library", icon: <Library size={22} />, label: "Library" },
+    { to: "/reading", icon: <BookOpen size={22} />, label: "Reading" },
+    { to: "/settings", icon: <Settings size={22} />, label: "Settings" },
   ];
 
   const handleSync = async () => {
     if (!dirHandle) {
-      addToast('Please select a library folder first', 'info');
+      addToast("Please select a library folder first", "info");
       return;
     }
     setIsSyncing(true);
     try {
       await scanDirectory(dirHandle);
-      addToast('Library synced with folder', 'success');
-    } catch (err) {
-      addToast('Sync failed', 'error');
+      addToast("Library synced with folder", "success");
+    } catch {
+      addToast("Sync failed", "error");
     } finally {
       setIsSyncing(false);
     }
@@ -47,19 +53,19 @@ function Sidebar() {
       </div>
 
       <nav className="sidebar-nav">
-        {navItems.map(item => (
-          <NavLink 
-            key={item.to} 
-            to={item.to} 
+        {navItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
             end={item.end}
-            className={({isActive}) => `nav-item ${isActive ? 'active' : ''}`}
+            className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
             title={item.label}
           >
             {item.icon}
           </NavLink>
         ))}
-        <button 
-          className={`nav-item sync-btn ${isSyncing ? 'spinning' : ''}`} 
+        <button
+          className={`nav-item sync-btn ${isSyncing ? "spinning" : ""}`}
           onClick={handleSync}
           title="Sync with folder"
           disabled={isSyncing}
@@ -67,7 +73,7 @@ function Sidebar() {
           <RefreshCw size={22} />
         </button>
       </nav>
-      
+
       <div className="sidebar-footer">
         <button className="nav-item logout-btn" title="Logout">
           <LogOut size={22} />

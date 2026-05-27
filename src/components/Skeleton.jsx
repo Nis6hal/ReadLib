@@ -1,10 +1,14 @@
-import React from 'react';
-import './Skeleton.css';
+import "./Skeleton.css";
 
-export function Skeleton({ width, height, borderRadius = '4px', className = '' }) {
+export function Skeleton({
+  width,
+  height,
+  borderRadius = "4px",
+  className = "",
+}) {
   return (
-    <div 
-      className={`skeleton-base ${className}`} 
+    <div
+      className={`skeleton-base ${className}`}
       style={{ width, height, borderRadius }}
     />
   );
