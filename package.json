@@ -1,7 +1,9 @@
 {
   "name": "readlib",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "description": "A desktop library and reading tracker for EPUB and PDF books.",
+  "author": "ReadLib",
   "type": "module",
   "main": "electron/main.js",
   "scripts": {
@@ -42,14 +44,22 @@
     "appId": "com.readlib.app",
     "productName": "ReadLib",
     "directories": {
-      "output": "dist-electron"
+      "output": "dist-electron",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "electron/**/*"
     ],
+    "extraResources": [
+      {
+        "from": "build/icon.png",
+        "to": "icon.png"
+      }
+    ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icon.png"
     }
   }
 }
