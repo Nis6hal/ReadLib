@@ -7,20 +7,74 @@ import {
   Target,
   BarChart3,
   Flame,
+  Edit2,
+  Check,
 } from "lucide-react";
 import { useLibrary } from "../context/LibraryContext";
 import "../App.css";
 import "./Profile.css";
 
 function Profile() {
-  const { books, stats } = useLibrary();
+  const {
+    books,
+    stats,
+    userName,
+    updateUserName,
+    yearlyGoal,
+    updateYearlyGoal,
+    loading,
+    syncKey,
+    isSyncEnabled,
+    syncWithCloud,
+    importSyncKey,
+  } = useLibrary();
+
   const [animated, setAnimated] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [draftName, setDraftName] = useState(userName || "");
+  const [isEditingGoal, setIsEditingGoal] = useState(false);
+  const [draftGoal, setDraftGoal] = useState(yearlyGoal || 50);
 
   useEffect(() => {
     // Trigger bar animations after mount
     const timer = setTimeout(() => setAnimated(true), 200);
     return () => clearTimeout(timer);
   }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // Sync draft states when context changes
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setDraftName(userName || "");
+  }, [userName]);
+
+// eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    setDraftGoal(yearlyGoal || 50);
+  }, [yearlyGoal]);
+
+
+
+
+
+  const saveName = async () => {
+    if (draftName.trim() && draftName !== userName) {
+      await updateUserName(draftName.trim());
+    } else {
+      setDraftName(userName || "");
+    }
+    setIsEditingName(false);
+  };
+
+  const saveGoal = async () => {
+    const val = parseInt(draftGoal);
+    if (!isNaN(val) && val >= 1 && val <= 365) {
+      await updateYearlyGoal(val);
+    } else {
+      setDraftGoal(yearlyGoal || 50);
+    }
+    setIsEditingGoal(false);
+  };
 
   const completionRate =
     stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0;
@@ -64,7 +118,63 @@ function Profile() {
           <User size={32} />
         </div>
         <div className="profile-hero-info">
-          <h2>Book Lover</h2>
+          {isEditingName ? (
+            <div className="profile-name-edit-wrap">
+              <input
+                type="text"
+                className="input profile-name-edit-input"
+                value={draftName}
+                onChange={(e) => setDraftName(e.target.value)}
+                onBlur={saveName}
+                onKeyDown={(e) => e.key === "Enter" && saveName()}
+                autoFocus
+              />
+              <button className="btn-icon profile-save-btn" onClick={saveName}>
+                <Check size={16} />
+              </button>
+            </div>
+          ) : (
+            <h2
+              className="profile-name-editable"
+              onClick={() => setIsEditingName(true)}
+              title="Click to edit name"
+            >
+              {userName || "Book Lover"}
+              <Edit2 size={14} className="profile-edit-icon-hint" />
+            </h2>
+          )}
+
+          <div className="profile-goal-row">
+            <span className="profile-goal-label">Reading Target: </span>
+            {isEditingGoal ? (
+              <div className="profile-goal-edit-wrap">
+                <input
+                  type="number"
+                  className="input profile-goal-edit-input"
+                  value={draftGoal}
+                  min={1}
+                  max={365}
+                  onChange={(e) => setDraftGoal(e.target.value)}
+                  onBlur={saveGoal}
+                  onKeyDown={(e) => e.key === "Enter" && saveGoal()}
+                  autoFocus
+                />
+                <button className="btn-icon profile-save-btn" onClick={saveGoal}>
+                  <Check size={14} />
+                </button>
+              </div>
+            ) : (
+              <span
+                className="profile-goal-clickable"
+                onClick={() => setIsEditingGoal(true)}
+                title="Click to edit goal"
+              >
+                🎯 {yearlyGoal} books this year
+                <Edit2 size={11} className="profile-edit-icon-hint" />
+              </span>
+            )}
+          </div>
+
           <p className="profile-hero-sub">
             {stats.total > 0
               ? `You've added ${stats.total} book${stats.total !== 1 ? "s" : ""} to your library`

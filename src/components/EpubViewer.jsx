@@ -33,7 +33,7 @@ function applyRenditionTheme(rendition, theme) {
 function EpubViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { findBookById, updateBook } = useLibrary();
+  const { findBookById, updateBook, loading: libraryLoading } = useLibrary();
   const viewerRef = useRef(null);
   const bookRef = useRef(null);
   const renditionRef = useRef(null);
@@ -44,8 +44,15 @@ function EpubViewer() {
   const [fontSize, setFontSize] = useState(100);
 
   const bookData = findBookById(id);
+  const bookDataRef = useRef(bookData);
+
+  // Keep ref updated with latest book state
+  useEffect(() => {
+    bookDataRef.current = bookData;
+  }, [bookData]);
+
   const missingBookError =
-    !bookData || !bookData.fileHandle
+    !libraryLoading && (!bookData || !bookData.fileHandle)
       ? "Book not found or file handle unavailable."
       : null;
 
@@ -56,20 +63,22 @@ function EpubViewer() {
   }, []);
 
   useEffect(() => {
-    if (!bookData?.fileHandle) return;
+    if (libraryLoading) return;
+    const currentBookSnapshot = findBookById(id);
+    if (!currentBookSnapshot?.fileHandle) return;
 
     let cancelled = false;
 
     async function loadEpub() {
       try {
-        const hasPermission = await verifyPermission(bookData.fileHandle);
+        const hasPermission = await verifyPermission(currentBookSnapshot.fileHandle);
         if (!hasPermission) {
           setError("Permission denied. Please grant access in Settings.");
           setLoading(false);
           return;
         }
 
-        const file = await bookData.fileHandle.getFile();
+        const file = await currentBookSnapshot.fileHandle.getFile();
         const arrayBuffer = await file.arrayBuffer();
         const epub = ePub(arrayBuffer);
         bookRef.current = epub;
@@ -85,7 +94,7 @@ function EpubViewer() {
         renditionRef.current = rendition;
 
         // Restore last read location if available
-        const display = rendition.display(bookData.lastLocation);
+        const display = rendition.display(currentBookSnapshot.lastLocation);
 
         display.then(() => {
           if (!cancelled) {
@@ -97,14 +106,17 @@ function EpubViewer() {
         rendition.on("relocated", (loc) => {
           if (!cancelled) {
             const progress = loc.start.percentage * 100;
-            updateBook({
-              ...bookData,
-              progress,
-              lastLocation: loc.start.cfi,
-              lastRead: new Date().toISOString(),
-              category:
-                bookData.category === "Planned" ? "Reading" : bookData.category,
-            });
+            const currentBookData = bookDataRef.current;
+            if (currentBookData) {
+              updateBook({
+                ...currentBookData,
+                progress,
+                lastLocation: loc.start.cfi,
+                lastRead: new Date().toISOString(),
+                category:
+                  currentBookData.category === "Planned" ? "Reading" : currentBookData.category,
+              });
+            }
           }
         });
       } catch (err) {
@@ -126,7 +138,7 @@ function EpubViewer() {
         bookRef.current.destroy();
       }
     };
-  }, [applyTheme, bookData, readerTheme, updateBook]);
+  }, [id, findBookById, applyTheme, readerTheme, updateBook, libraryLoading]);
 
   const changeFontSize = (delta) => {
     const newSize = Math.max(50, Math.min(200, fontSize + delta));
@@ -155,11 +167,11 @@ function EpubViewer() {
       </div>
     );
 
-  if (loading)
+  if (libraryLoading || loading)
     return (
       <div className="epub-viewer-loading">
         <div className="spinner"></div>
-        <p>Opening your book...</p>
+        <p>{libraryLoading ? "Loading library database..." : "Opening your book..."}</p>
       </div>
     );
 

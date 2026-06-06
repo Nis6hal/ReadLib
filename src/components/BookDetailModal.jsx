@@ -12,6 +12,8 @@ import {
   Edit2,
   Check,
   Sparkles,
+  Trash2,
+  RefreshCw,
 } from "lucide-react";
 import { useLibrary, GENRES } from "../context/LibraryContext";
 import { useToast } from "./Toast";
@@ -62,13 +64,44 @@ function timeAgo(dateStr) {
 }
 
 function BookDetailModal({ book, onClose }) {
-  const { updateBook, books } = useLibrary();
+  const { updateBook, deleteBook, fetchBookMetadata, books } = useLibrary();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const coverInputRef = useRef(null);
 
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
+  const [isRefetching, setIsRefetching] = useState(false);
+
+  const handleRefetchMetadata = async () => {
+    setIsRefetching(true);
+    try {
+      const meta = await fetchBookMetadata(book.title, book.author);
+      if (meta) {
+        const updated = {
+          ...book,
+          author: (!book.author || book.author === "Unknown Author") && meta.author
+            ? meta.author : book.author,
+          cover: book.cover || meta.cover || book.cover,
+          description: book.description || meta.description || book.description,
+          publisher: book.publisher || meta.publisher || book.publisher,
+          publishedDate: book.publishedDate || meta.publishedDate || book.publishedDate,
+          pageCount: book.pageCount || meta.pageCount || book.pageCount,
+          genre: book.genre !== "Other" ? book.genre : (meta.genre || book.genre),
+        };
+        // Always overwrite cover if new one found
+        if (meta.cover) updated.cover = meta.cover;
+        await updateBook(updated);
+        addToast("Metadata refreshed! ✨", "success");
+      } else {
+        addToast("No data found for this book.", "info");
+      }
+    } catch (e) {
+      addToast("Fetch failed. Check your connection.", "error");
+    } finally {
+      setIsRefetching(false);
+    }
+  };
 
   // Inline editing state
   const [editingTitle, setEditingTitle] = useState(false);
@@ -202,6 +235,15 @@ function BookDetailModal({ book, onClose }) {
               >
                 <Upload size={14} /> Change Cover
               </button>
+              <button
+                className="cover-upload-btn"
+                onClick={handleRefetchMetadata}
+                disabled={isRefetching}
+                title="Re-fetch cover and metadata from the internet"
+              >
+                <RefreshCw size={14} className={isRefetching ? "spinning" : ""} />
+                {isRefetching ? "Fetching..." : "Refresh Metadata"}
+              </button>
               <input
                 ref={coverInputRef}
                 type="file"
@@ -216,6 +258,19 @@ function BookDetailModal({ book, onClose }) {
               onClick={handleRead}
             >
               <Play size={18} fill="currentColor" /> Read Book
+            </button>
+
+            <button
+              className="btn btn-danger-outline modal-delete-btn"
+              onClick={async () => {
+                if (window.confirm(`Are you sure you want to remove "${book.title}" from your library?`)) {
+                  await deleteBook(book.id);
+                  addToast(`"${book.title}" removed from library`, "info");
+                  handleClose();
+                }
+              }}
+            >
+              <Trash2 size={16} /> Remove Book
             </button>
 
             {book.lastRead && (

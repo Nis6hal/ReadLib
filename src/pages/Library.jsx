@@ -50,7 +50,6 @@ function Library() {
     { id: "Favorites", label: "⭐ Favorites" },
     { id: "Must Read", label: "📚 Must Read" },
     { id: "Finished", label: "✅ Finished" },
-    ...GENRES.map((g) => ({ id: g, label: g })),
   ];
 
   const filteredBooks = useMemo(() => {
@@ -137,6 +136,54 @@ function Library() {
       setShowManualModal(true);
     }
   };
+
+  const emptyStateContent = useMemo(() => {
+    if (searchQuery.trim()) {
+      return {
+        title: "No matching books found",
+        description: `We couldn't find any books matching "${searchQuery}" in your library.`,
+        actionLabel: "Clear Search",
+        onAction: () => setSearchQuery(""),
+      };
+    }
+    if (activeCollection !== "All") {
+      let colName = "this";
+      let prompt = "Mark books to see them here.";
+      if (activeCollection === "Favorites") {
+        colName = "Favorites ⭐";
+        prompt = "Mark books as favorite in their detail view to see them here.";
+      } else if (activeCollection === "Must Read") {
+        colName = "Must Read 📚";
+        prompt = "Mark books as 'Must Read' (Planned) to see them here.";
+      } else if (activeCollection === "Finished") {
+        colName = "Finished ✅";
+        prompt = "Finish reading books to add them here automatically.";
+      }
+      return {
+        title: `Your ${colName} collection is empty`,
+        description: prompt,
+        actionLabel: "View All Books",
+        onAction: () => setActiveCollection("All"),
+      };
+    }
+    if (activeFilter !== "All") {
+      return {
+        title: `No books in ${activeFilter}`,
+        description: `You don't have any books categorized under the "${activeFilter}" genre.`,
+        actionLabel: "Clear Genre Filter",
+        onAction: () => {
+          setActiveFilter("All");
+          setSearchParams({});
+        },
+      };
+    }
+    return {
+      title: "No books found",
+      description: "Try adjusting your search or filters, or select a folder to import books.",
+      actionLabel: "Select Folder",
+      onAction: selectDirectory,
+    };
+  }, [searchQuery, activeCollection, activeFilter, selectDirectory, setSearchParams]);
 
   return (
     <div
@@ -279,13 +326,10 @@ function Library() {
           <div className="empty-icon">
             <LibraryIcon size={48} />
           </div>
-          <h3>No books found</h3>
-          <p>
-            Try adjusting your search or filters, or add a new folder to your
-            library.
-          </p>
-          <button className="btn btn-primary" onClick={selectDirectory}>
-            Add Folder
+          <h3>{emptyStateContent.title}</h3>
+          <p>{emptyStateContent.description}</p>
+          <button className="btn btn-primary" onClick={emptyStateContent.onAction}>
+            {emptyStateContent.actionLabel}
           </button>
         </div>
       )}

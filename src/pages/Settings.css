@@ -257,3 +257,126 @@
   color: var(--text-secondary);
   font-weight: 500;
 }
+
+/* Cloud Sync Styles */
+.settings-icon-wrap.cloud {
+  background: rgba(0, 188, 212, 0.1);
+  color: var(--accent-secondary);
+}
+
+.settings-sync-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  margin-top: 0.5rem;
+}
+
+.sync-toggle-row {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.sync-key-display, .sync-restore-box {
+  padding: 1.25rem !important;
+  border-radius: var(--radius-md) !important;
+  background: rgba(255, 255, 255, 0.01);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.sync-restore-box h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sync-restore-box p {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.sync-key-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sync-status-indicator {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.sync-key-input-row {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.sync-key-input {
+  font-family: monospace;
+  font-size: 0.85rem !important;
+  background: var(--bg-primary) !important;
+  color: var(--accent-primary) !important;
+  border-color: var(--glass-border) !important;
+  letter-spacing: 0.05em;
+  flex: 1;
+}
+
+.sync-restore-input {
+  font-size: 0.85rem !important;
+  flex: 1;
+}
+
+.sync-key-help {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Refresh All Metadata Progress */
+.refresh-progress-wrap {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.refresh-progress-bar {
+  width: 100%;
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.refresh-progress-fill {
+  height: 100%;
+  background: var(--gradient-accent);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.refresh-progress-text {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.spin-icon {
+  animation: spin-settings 0.8s linear infinite;
+}
+
+@keyframes spin-settings {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

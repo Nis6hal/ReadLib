@@ -444,3 +444,18 @@
   color: var(--text-muted);
 }
 
+.clickable-user-name {
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent-primary) 0%, var(--warning) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: inline-block;
+}
+
+.clickable-user-name:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+

@@ -115,10 +115,49 @@
   color: var(--accent-primary);
 }
 
+.cover-upload-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.cover-upload-btn .spinning {
+  animation: spin-icon 0.8s linear infinite;
+}
+
+@keyframes spin-icon {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 .modal-read-btn {
   width: 100%;
   padding: 0.8rem;
   font-size: 0.95rem;
+}
+
+.btn-danger-outline {
+  background: transparent;
+  color: #f87171;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all 0.2s ease;
+}
+
+.btn-danger-outline:hover {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+  color: #ef4444;
+}
+
+.modal-delete-btn {
+  width: 100%;
+  padding: 0.65rem;
+  font-size: 0.85rem;
 }
 
 .modal-last-read {

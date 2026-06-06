@@ -11,6 +11,8 @@ import {
   Palette,
   HardDrive,
   Target,
+  Cloud,
+  Sparkles,
 } from "lucide-react";
 import { useLibrary } from "../context/LibraryContext";
 import { useToast } from "../components/Toast";
@@ -29,9 +31,48 @@ function Settings() {
     updateUserName,
     yearlyGoal,
     updateYearlyGoal,
+    syncKey,
+    isSyncEnabled,
+    lastSynced,
+    syncWithCloud,
+    enableCloudSync,
+    disableCloudSync,
+    importSyncKey,
+    fetchBookMetadata,
+    updateBook,
   } = useLibrary();
   const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [importKeyVal, setImportKeyVal] = useState("");
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
+  const [refreshProgress, setRefreshProgress] = useState({ current: 0, total: 0, updated: 0 });
+
+  const handleManualSync = async () => {
+    setIsSyncing(true);
+    try {
+      await syncWithCloud();
+      addToast("Library successfully synced with cloud! ☁️", "success");
+    } catch (err) {
+      addToast("Sync failed. Check your internet connection.", "danger");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const handleImportKey = async () => {
+    if (!importKeyVal.trim()) return;
+    setIsSyncing(true);
+    try {
+      await importSyncKey(importKeyVal.trim());
+      addToast("Library linked and synced successfully! 🎉", "success");
+      setImportKeyVal("");
+    } catch (err) {
+      addToast("Failed to link key. Make sure the key is correct.", "danger");
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const handleRescan = async () => {
     if (dirHandle && !isScanning) {
@@ -55,6 +96,52 @@ function Settings() {
       indexedDB.deleteDatabase("ReadLibDB");
       window.location.reload();
     }
+  };
+
+  const handleRefreshAllMetadata = async () => {
+    if (isRefreshingAll || books.length === 0) return;
+    setIsRefreshingAll(true);
+    const total = books.length;
+    let updated = 0;
+    setRefreshProgress({ current: 0, total, updated: 0 });
+
+    for (let i = 0; i < books.length; i++) {
+      const book = books[i];
+      setRefreshProgress({ current: i + 1, total, updated });
+      try {
+        const meta = await fetchBookMetadata(book.title, book.author);
+        if (meta) {
+          const changes = {};
+          if (meta.cover) changes.cover = meta.cover;
+          if (meta.author && (!book.author || book.author === "Unknown Author"))
+            changes.author = meta.author;
+          if (meta.description && !book.description)
+            changes.description = meta.description;
+          if (meta.publisher && !book.publisher)
+            changes.publisher = meta.publisher;
+          if (meta.publishedDate && !book.publishedDate)
+            changes.publishedDate = meta.publishedDate;
+          if (meta.pageCount && !book.pageCount)
+            changes.pageCount = meta.pageCount;
+          if (meta.genre && book.genre === "Other")
+            changes.genre = meta.genre;
+
+          if (Object.keys(changes).length > 0) {
+            await updateBook({ ...book, ...changes });
+            updated++;
+            setRefreshProgress({ current: i + 1, total, updated });
+          }
+        }
+      } catch (err) {
+        console.warn(`Failed to refresh metadata for "${book.title}"`, err);
+      }
+      // Small delay to avoid rate-limiting
+      await new Promise((r) => setTimeout(r, 300));
+    }
+
+    setRefreshProgress({ current: total, total, updated });
+    addToast(`Metadata refreshed! ${updated} of ${total} books updated ✨`, "success");
+    setIsRefreshingAll(false);
   };
 
   return (
@@ -174,6 +261,101 @@ function Settings() {
         </div>
       </div>
 
+      {/* Cloud Sync */}
+      <div className="card settings-section fade-in fade-in-delay-3">
+        <div className="settings-section-header">
+          <div className="settings-icon-wrap cloud">
+            <Cloud size={18} />
+          </div>
+          <div>
+            <h3 className="settings-section-title">Cloud Sync</h3>
+            <p className="settings-desc">
+              Synchronize your library metadata, reading stats, and progress across devices.
+            </p>
+          </div>
+        </div>
+        <div className="settings-sync-body">
+          <div className="sync-toggle-row">
+            <button
+              className={`btn ${isSyncEnabled ? "btn-secondary" : "btn-primary"}`}
+              onClick={isSyncEnabled ? disableCloudSync : enableCloudSync}
+              id="cloud-sync-toggle-btn"
+            >
+              <Cloud size={16} />
+              {isSyncEnabled ? "Disable Cloud Sync" : "Enable Cloud Sync"}
+            </button>
+            {isSyncEnabled && (
+              <button
+                className="btn btn-secondary"
+                onClick={handleManualSync}
+                disabled={isSyncing}
+                id="manual-sync-btn"
+              >
+                <RefreshCw size={16} className={isSyncing ? "spin-icon" : ""} />
+                {isSyncing ? "Syncing..." : "Sync Now"}
+              </button>
+            )}
+          </div>
+
+          {isSyncEnabled && (
+            <div className="sync-key-display glass-panel">
+              <div className="sync-key-header">
+                <span>Secret Sync Key</span>
+                <span className="sync-status-indicator">
+                  {lastSynced
+                    ? `Last Synced: ${new Date(lastSynced).toLocaleTimeString()}`
+                    : "Not synced yet"}
+                </span>
+              </div>
+              <div className="sync-key-input-row">
+                <input
+                  type="text"
+                  className="input sync-key-input"
+                  readOnly
+                  value={syncKey}
+                  onClick={(e) => e.target.select()}
+                />
+                <button
+                  className="btn btn-secondary"
+                  onClick={() => {
+                    navigator.clipboard.writeText(syncKey);
+                    addToast("Sync key copied to clipboard! 📋", "success");
+                  }}
+                >
+                  Copy Key
+                </button>
+              </div>
+              <p className="sync-key-help">
+                ⚠️ Keep this key private. Use it on another device to link your library.
+              </p>
+            </div>
+          )}
+
+          {!isSyncEnabled && (
+            <div className="sync-restore-box glass-panel">
+              <h4>Link / Restore Existing Library</h4>
+              <p>Enter a Sync Key from another device to restore or merge your data.</p>
+              <div className="sync-key-input-row">
+                <input
+                  type="text"
+                  className="input sync-restore-input"
+                  placeholder="Paste your sync key here (e.g. readlib-sync-xxxxx)"
+                  value={importKeyVal}
+                  onChange={(e) => setImportKeyVal(e.target.value)}
+                />
+                <button
+                  className="btn btn-secondary"
+                  onClick={handleImportKey}
+                  disabled={!importKeyVal.trim() || isSyncing}
+                >
+                  Link & Sync
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Data Management */}
       <div className="card settings-section fade-in fade-in-delay-3">
         <div className="settings-section-header">
@@ -193,13 +375,39 @@ function Settings() {
             <span className="data-stat-label">books tracked</span>
           </div>
         </div>
-        <button
-          className="btn btn-danger"
-          onClick={handleClearData}
-          id="clear-data-btn"
-        >
-          <Trash2 size={16} /> Clear All Data
-        </button>
+        <div className="settings-actions">
+          <button
+            className="btn btn-primary"
+            onClick={handleRefreshAllMetadata}
+            disabled={isRefreshingAll || books.length === 0}
+            id="refresh-all-metadata-btn"
+          >
+            <Sparkles size={16} className={isRefreshingAll ? "spin-icon" : ""} />
+            {isRefreshingAll
+              ? `Refreshing ${refreshProgress.current}/${refreshProgress.total}...`
+              : "Refresh All Metadata"}
+          </button>
+          <button
+            className="btn btn-danger"
+            onClick={handleClearData}
+            id="clear-data-btn"
+          >
+            <Trash2 size={16} /> Clear All Data
+          </button>
+        </div>
+        {isRefreshingAll && (
+          <div className="refresh-progress-wrap">
+            <div className="refresh-progress-bar">
+              <div
+                className="refresh-progress-fill"
+                style={{ width: `${(refreshProgress.current / refreshProgress.total) * 100}%` }}
+              ></div>
+            </div>
+            <span className="refresh-progress-text">
+              {refreshProgress.current} / {refreshProgress.total} checked · {refreshProgress.updated} updated
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Yearly Goal */}

@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BookOpen, CheckCircle, ArrowRight, Flame, Target } from "lucide-react";
 import { useLibrary } from "../context/LibraryContext";
 import BookCard from "../components/BookCard";
+import AuthorDetailModal from "../components/AuthorDetailModal";
 import "../App.css";
 import "./Home.css";
 
@@ -82,6 +84,7 @@ function Home() {
     userName,
   } = useLibrary();
   const navigate = useNavigate();
+  const [selectedAuthor, setSelectedAuthor] = useState(null);
 
   const streak = calculateStreak();
   const booksReadThisYear = books.filter(
@@ -210,7 +213,14 @@ function Home() {
       <header className="dashboard-header">
         <div className="greeting-wrapper">
           <h1 className="greeting-title">
-            {greeting}, {userName || "Reader"}
+            {greeting},{" "}
+            <span
+              className="clickable-user-name"
+              onClick={() => navigate("/profile")}
+              title="View Profile"
+            >
+              {userName || "Reader"}
+            </span>
           </h1>
           <p className="greeting-date">
             {new Date().toLocaleDateString("en-US", {
@@ -365,9 +375,8 @@ function Home() {
               <div
                 key={author.name}
                 className="author-card-large card"
-                onClick={() =>
-                  navigate(`/library?search=${encodeURIComponent(author.name)}`)
-                }
+                onClick={() => setSelectedAuthor(author.name)}
+                title={`View details for ${author.name}`}
               >
                 <img
                   src={author.avatar}
@@ -382,6 +391,13 @@ function Home() {
             ))}
           </div>
         </section>
+      )}
+
+      {selectedAuthor && (
+        <AuthorDetailModal
+          authorName={selectedAuthor}
+          onClose={() => setSelectedAuthor(null)}
+        />
       )}
     </div>
   );

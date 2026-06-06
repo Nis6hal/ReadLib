@@ -47,7 +47,7 @@ async function fitPdfToWidth(pdf, pageNum, setScale) {
 function PdfViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { findBookById, updateBook, logReadingSession } = useLibrary();
+  const { findBookById, updateBook, logReadingSession, loading: libraryLoading } = useLibrary();
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
@@ -86,7 +86,7 @@ function PdfViewer() {
   // Find the book using robust helper
   const book = findBookById(id);
   const missingBookError =
-    !book || !book.fileHandle
+    !libraryLoading && (!book || !book.fileHandle)
       ? "Book not found or file handle unavailable. Please re-select the library folder in Settings."
       : null;
 
@@ -100,7 +100,7 @@ function PdfViewer() {
 
   // Load the PDF
   useEffect(() => {
-    if (!book?.fileHandle) return;
+    if (libraryLoading || !book?.fileHandle) return;
 
     let cancelled = false;
 
@@ -128,11 +128,16 @@ function PdfViewer() {
           const vp = firstPage.getViewport({ scale: 1 });
           setPageDimensions({ width: vp.width, height: vp.height });
 
-          // Restore last read page
-          const savedPage =
-            book.progress > 0
-              ? Math.max(1, Math.round((book.progress / 100) * pdf.numPages))
-              : 1;
+          // Restore last read page accurately from lastLocation
+          let savedPage = 1;
+          if (book.lastLocation && book.lastLocation.startsWith("page-")) {
+            const pageNum = parseInt(book.lastLocation.replace("page-", ""));
+            if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pdf.numPages) {
+              savedPage = pageNum;
+            }
+          } else if (book.progress > 0) {
+            savedPage = Math.max(1, Math.round((book.progress / 100) * pdf.numPages));
+          }
           setCurrentPage(savedPage);
           setPageInput(savedPage.toString());
           lastLoggedPage.current = savedPage;
@@ -158,11 +163,11 @@ function PdfViewer() {
     return () => {
       cancelled = true;
     };
-  }, [book, fitToWidth]);
+  }, [book, fitToWidth, libraryLoading]);
 
   // Render a page
   const renderPage = useCallback(
-    async (pageNum, canvas, isList = false, textLayerDiv = null) => {
+    async (pageNum, canvas, isList = false, textLayerDiv = null, renderCanvas = true) => {
       if (!pdfDoc || !canvas) return;
 
       try {
@@ -170,36 +175,38 @@ function PdfViewer() {
         const viewport = page.getViewport({
           scale: isList ? scale * 0.8 : scale,
         });
-        const context = canvas.getContext("2d");
 
-        const dpr = window.devicePixelRatio || 1;
-        canvas.width = viewport.width * dpr;
-        canvas.height = viewport.height * dpr;
-        canvas.style.width = `${viewport.width}px`;
-        canvas.style.height = `${viewport.height}px`;
-        context.scale(dpr, dpr);
+        if (renderCanvas) {
+          const context = canvas.getContext("2d");
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = viewport.width * dpr;
+          canvas.height = viewport.height * dpr;
+          canvas.style.width = `${viewport.width}px`;
+          canvas.style.height = `${viewport.height}px`;
+          context.scale(dpr, dpr);
 
-        await page.render({
-          canvasContext: context,
-          viewport: viewport,
-        }).promise;
-
-        // Render text layer
-        if (textLayerDiv) {
-          textLayerDiv.innerHTML = "";
-          textLayerDiv.style.width = `${viewport.width}px`;
-          textLayerDiv.style.height = `${viewport.height}px`;
-          textLayerDiv.style.left = canvas.offsetLeft + "px";
-          textLayerDiv.style.top = canvas.offsetTop + "px";
-
-          const textContent = await page.getTextContent();
-          const textLayer = new pdfjsLib.TextLayer({
-            textContentSource: textContent,
-            container: textLayerDiv,
+          await page.render({
+            canvasContext: context,
             viewport: viewport,
-          });
-          await textLayer.render();
+          }).promise;
         }
+
+          // Render text layer
+          if (textLayerDiv) {
+            textLayerDiv.innerHTML = "";
+            textLayerDiv.style.width = `${viewport.width}px`;
+            textLayerDiv.style.height = `${viewport.height}px`;
+            textLayerDiv.style.left = "0px";
+            textLayerDiv.style.top = "0px";
+
+            const textContent = await page.getTextContent();
+            const textLayer = new pdfjsLib.TextLayer({
+              textContentSource: textContent,
+              container: textLayerDiv,
+              viewport: viewport,
+            });
+            await textLayer.render();
+          }
       } catch (err) {
         console.error("Error rendering page:", err);
       }
@@ -220,6 +227,7 @@ function PdfViewer() {
       const updatedBook = {
         ...bookRef.current,
         progress,
+        lastLocation: `page-${currentPage}`,
         lastRead: new Date().toISOString(),
         category:
           bookRef.current.category === "Planned"
@@ -394,38 +402,50 @@ function PdfViewer() {
     return () => window.removeEventListener("keydown", handleKey);
   }, [goToPrev, goToNext, navigate, viewMode, zoomIn, zoomOut]);
 
-  // Vertical Scroll Observer
+  // Vertical Scroll Observer - Track current page closest to the top of viewport
   useEffect(() => {
     if (viewMode !== "vertical" || !containerRef.current) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (isJumping.current) return;
+    const container = containerRef.current;
+    let frameId;
 
-        // Find the entry that is most visible
-        const visibleEntry = entries.find(
-          (entry) => entry.isIntersecting && entry.intersectionRatio > 0.5,
-        );
+    const onScroll = () => {
+      if (isJumping.current) return;
 
-        if (visibleEntry) {
-          const pageNum = parseInt(
-            visibleEntry.target.getAttribute("data-page"),
-          );
-          if (pageNum && pageNum !== currentPage) {
-            setCurrentPage(pageNum);
-            setPageInput(pageNum.toString());
+      cancelAnimationFrame(frameId);
+      frameId = requestAnimationFrame(() => {
+        const items = container.querySelectorAll(".pdf-page-item");
+        let closestPage = currentPage;
+        let minDistance = Infinity;
+
+        const containerTop = container.getBoundingClientRect().top;
+
+        items.forEach((item) => {
+          const rect = item.getBoundingClientRect();
+          // Distance from page top to viewport top
+          const distance = Math.abs(rect.top - containerTop);
+          if (distance < minDistance) {
+            minDistance = distance;
+            const pageNum = parseInt(item.getAttribute("data-page"));
+            if (pageNum) {
+              closestPage = pageNum;
+            }
           }
+        });
+
+        if (closestPage !== currentPage) {
+          setCurrentPage(closestPage);
+          setPageInput(closestPage.toString());
         }
-      },
-      { threshold: [0.5, 0.7, 0.9] },
-    );
+      });
+    };
 
-    const pageElements =
-      containerRef.current.querySelectorAll(".pdf-page-item");
-    pageElements.forEach((el) => observer.observe(el));
-
-    return () => observer.disconnect();
-  }, [viewMode, pdfDoc, currentPage]);
+    container.addEventListener("scroll", onScroll);
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      cancelAnimationFrame(frameId);
+    };
+  }, [viewMode, currentPage]);
 
   if (missingBookError) {
     return (
@@ -444,12 +464,12 @@ function PdfViewer() {
     );
   }
 
-  if (loading) {
+  if (libraryLoading || loading) {
     return (
       <div className="pdf-viewer-container">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>Loading PDF...</p>
+          <p>{libraryLoading ? "Loading library database..." : "Opening your PDF..."}</p>
         </div>
       </div>
     );
@@ -649,6 +669,7 @@ function PdfViewer() {
 }
 
 function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
+  const itemRef = useRef(null);
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -660,23 +681,54 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
   useEffect(() => {
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) setIsVisible(true);
+        setIsVisible(entry.isIntersecting);
       },
-      { threshold: 0.05 },
+      { threshold: 0.0, rootMargin: "250px 0px" },
     );
 
-    if (canvasRef.current) observer.observe(canvasRef.current);
+    if (itemRef.current) observer.observe(itemRef.current);
     return () => observer.disconnect();
   }, []);
 
   useEffect(() => {
+    let canvasTimer;
+    let textLayerTimer;
+
     if (isVisible && canvasRef.current) {
-      renderPage(pageNum, canvasRef.current, true, textLayerRef.current);
+      // Debounce canvas rendering to avoid rendering pages the user just scrolls past quickly
+      canvasTimer = setTimeout(() => {
+        renderPage(pageNum, canvasRef.current, true, null, true);
+
+        // Render heavy text layer with additional delay
+        textLayerTimer = setTimeout(() => {
+          if (canvasRef.current) {
+            renderPage(pageNum, canvasRef.current, true, textLayerRef.current, false);
+          }
+        }, 250);
+      }, 80);
+    } else if (!isVisible && canvasRef.current) {
+      // Immediately clear canvas size and memory when scrolled offscreen
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+      if (context) {
+        context.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      canvas.width = 0;
+      canvas.height = 0;
+      if (textLayerRef.current) {
+        textLayerRef.current.innerHTML = "";
+      }
     }
+
+    return () => {
+      if (canvasTimer) clearTimeout(canvasTimer);
+      if (textLayerTimer) clearTimeout(textLayerTimer);
+    };
   }, [isVisible, pageNum, scale, renderPage]);
 
   return (
     <div
+      ref={itemRef}
       className="pdf-page-item"
       data-page={pageNum}
       style={{

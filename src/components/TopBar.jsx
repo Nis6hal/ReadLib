@@ -4,7 +4,7 @@ import { NavLink, useNavigate, useLocation } from "react-router-dom";
 import { useLibrary } from "../context/LibraryContext";
 import { useToast } from "./Toast";
 import "./TopBar.css";
-
+// Navigation: profile is now a dedicated page route
 function TopBar() {
   const { userName, theme, toggleTheme, books } = useLibrary();
   const { addToast } = useToast();
@@ -90,9 +90,13 @@ function TopBar() {
         <button className="icon-btn" onClick={toggleTheme} title="Toggle Theme">
           {theme === "dark" ? <Sun size={20} /> : <Moon size={20} />}
         </button>
-        <div className="user-profile">
-          <span className="user-name">{userName}</span>
+        <div
+          className={`user-profile-btn${location.pathname === '/profile' ? ' active' : ''}`}
+          onClick={() => navigate('/profile')}
+          title="Open profile"
+        >
           <div className="user-avatar-initials">{initials}</div>
+          <span className="user-name">{userName}</span>
         </div>
       </div>
     </div>

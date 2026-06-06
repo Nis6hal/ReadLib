@@ -1,4 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
+// Google Books API key from environment (optional)
 import {
   getAllBooks,
   saveBook,
@@ -40,6 +41,15 @@ export function LibraryProvider({ children }) {
     "To Review",
   ]);
 
+  const [syncKey, setSyncKey] = useState("");
+  const [isSyncEnabled, setIsSyncEnabled] = useState(false);
+  const [lastSynced, setLastSynced] = useState(null);
+
+  // Ref to always have latest syncWithCloud without stale closure in interval
+  const syncWithCloudRef = useRef(null);
+
+
+
   // Load initial data
   useEffect(() => {
     async function loadData() {
@@ -72,6 +82,21 @@ export function LibraryProvider({ children }) {
 
         const storedBooks = await getAllBooks();
         setBooks(storedBooks || []);
+
+        const storedSyncKey = await getSetting("syncKey");
+        if (storedSyncKey) {
+          setSyncKey(storedSyncKey);
+        }
+
+        const storedSyncEnabled = await getSetting("isSyncEnabled");
+        if (storedSyncEnabled !== undefined) {
+          setIsSyncEnabled(storedSyncEnabled);
+        }
+
+        const storedLastSynced = await getSetting("lastSynced");
+        if (storedLastSynced) {
+          setLastSynced(storedLastSynced);
+        }
       } catch (err) {
         console.error("Error loading data", err);
       } finally {
@@ -81,6 +106,169 @@ export function LibraryProvider({ children }) {
     loadData();
   }, []);
 
+  const generateSyncKey = () => {
+    const rand = () => Math.random().toString(36).substring(2, 8);
+    return `readlib-sync-${rand()}-${rand()}`;
+  };
+
+  const uploadToCloud = async (key, currentBooks) => {
+    const booksToSync = currentBooks.map(({ fileHandle: _, cover: __, ...rest }) => rest);
+    const payload = {
+      userName,
+      yearlyGoal,
+      readingHistory,
+      books: booksToSync,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const response = await fetch(`https://kvdb.io/readlib_sync_v1_bucket/${key}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to upload: ${response.statusText}`);
+    }
+  };
+
+  const syncWithCloud = async (forceKey = null) => {
+    const activeKey = forceKey || syncKey;
+    if (!activeKey) return;
+
+    try {
+      const response = await fetch(`https://kvdb.io/readlib_sync_v1_bucket/${activeKey}`);
+      let cloudData = null;
+      if (response.ok) {
+        cloudData = await response.json();
+      }
+
+      const localBooks = await getAllBooks();
+      
+      if (!cloudData) {
+        await uploadToCloud(activeKey, localBooks);
+        const now = new Date().toISOString();
+        setLastSynced(now);
+        await setSetting("lastSynced", now);
+        return;
+      }
+
+      if (cloudData.userName && cloudData.userName !== userName) {
+        setUserName(cloudData.userName);
+        await setSetting("userName", cloudData.userName);
+      }
+      if (cloudData.yearlyGoal && cloudData.yearlyGoal !== yearlyGoal) {
+        setYearlyGoal(cloudData.yearlyGoal);
+        await setSetting("yearlyGoal", cloudData.yearlyGoal);
+      }
+
+      const mergedHistory = { ...readingHistory };
+      if (cloudData.readingHistory) {
+        for (const [date, pages] of Object.entries(cloudData.readingHistory)) {
+          mergedHistory[date] = Math.max(mergedHistory[date] || 0, pages);
+        }
+        setReadingHistory(mergedHistory);
+        await setSetting("readingHistory", mergedHistory);
+      }
+
+      const mergedBooks = [...localBooks];
+      let updatedLocalDb = false;
+
+      if (cloudData.books && Array.isArray(cloudData.books)) {
+        for (const cloudBook of cloudData.books) {
+          const localMatch = mergedBooks.find((b) => b.id === cloudBook.id);
+          if (localMatch) {
+            const cloudDate = cloudBook.lastRead ? new Date(cloudBook.lastRead) : new Date(0);
+            const localDate = localMatch.lastRead ? new Date(localMatch.lastRead) : new Date(0);
+
+            if (cloudDate > localDate || cloudBook.progress > localMatch.progress) {
+              const updatedBook = {
+                ...localMatch,
+                ...cloudBook,
+                fileHandle: localMatch.fileHandle,
+                cover: localMatch.cover || cloudBook.cover,
+              };
+              await saveBook(updatedBook);
+              const idx = mergedBooks.findIndex((b) => b.id === cloudBook.id);
+              mergedBooks[idx] = updatedBook;
+              updatedLocalDb = true;
+            }
+          } else {
+            const newBook = {
+              ...cloudBook,
+              fileHandle: null,
+              fileMissing: true,
+            };
+            await saveBook(newBook);
+            mergedBooks.push(newBook);
+            updatedLocalDb = true;
+          }
+        }
+        
+        if (updatedLocalDb) {
+          setBooks(mergedBooks);
+        }
+      }
+
+      await uploadToCloud(activeKey, mergedBooks);
+      const now = new Date().toISOString();
+      setLastSynced(now);
+      await setSetting("lastSynced", now);
+    } catch (err) {
+      console.error("Cloud sync failed:", err);
+      throw err;
+    }
+  };
+
+  const triggerAutoSync = async () => {
+    if (isSyncEnabled && syncKey) {
+      try {
+        const currentBooks = await getAllBooks();
+        await uploadToCloud(syncKey, currentBooks);
+        const now = new Date().toISOString();
+        setLastSynced(now);
+        await setSetting("lastSynced", now);
+      } catch (err) {
+        console.warn("Auto-sync background upload failed", err);
+      }
+    }
+  };
+
+  const enableCloudSync = async () => {
+    const key = generateSyncKey();
+    setSyncKey(key);
+    setIsSyncEnabled(true);
+    await setSetting("syncKey", key);
+    await setSetting("isSyncEnabled", true);
+    
+    try {
+      const currentBooks = await getAllBooks();
+      await uploadToCloud(key, currentBooks);
+      const now = new Date().toISOString();
+      setLastSynced(now);
+      await setSetting("lastSynced", now);
+    } catch (err) {
+      console.warn("Failed first upload during enable:", err);
+    }
+  };
+
+  const disableCloudSync = async () => {
+    setIsSyncEnabled(false);
+    await setSetting("isSyncEnabled", false);
+  };
+
+  const importSyncKey = async (key) => {
+    if (!key || !key.trim()) return;
+    const cleanKey = key.trim();
+    setSyncKey(cleanKey);
+    setIsSyncEnabled(true);
+    await setSetting("syncKey", cleanKey);
+    await setSetting("isSyncEnabled", true);
+    initSync();
+  };
+
   const logReadingSession = async (pages) => {
     const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD local time
     const newHistory = {
@@ -89,11 +277,13 @@ export function LibraryProvider({ children }) {
     };
     setReadingHistory(newHistory);
     await setSetting("readingHistory", newHistory);
+    void triggerAutoSync();
   };
 
   const updateUserName = async (name) => {
     setUserName(name);
     await setSetting("userName", name);
+    void triggerAutoSync();
   };
 
   const calculateStreak = () => {
@@ -172,24 +362,81 @@ export function LibraryProvider({ children }) {
     return "Other";
   };
 
+  // Upgrade Google Books thumbnail URL: force HTTPS and remove page-curl effect
+  const upgradeGoogleBooksImage = (url) => {
+    if (!url) return null;
+    return url
+      .replace(/^http:\/\//, "https://")  // force HTTPS
+      .replace(/&edge=curl/, "");           // remove page-curl effect
+  };
+
+  // Try to get the best quality cover: zoom=0 first, validate it, fallback to zoom=1
+  const getBestCoverUrl = async (url) => {
+    if (!url) return null;
+    const base = upgradeGoogleBooksImage(url);
+    // Try zoom=0 (full res) first
+    const hiRes = base.replace(/zoom=\d+/, "zoom=0");
+    try {
+      const res = await fetch(hiRes, { method: "HEAD" });
+      // Google returns 200 even for "image not available" placeholders,
+      // but those are very small (~1KB). Real covers are >5KB.
+      if (res.ok && parseInt(res.headers.get("content-length") || "0") > 5000) {
+        return hiRes;
+      }
+    } catch {}
+    // Fallback: zoom=1 (thumbnail ~128px, always works)
+    return base;
+  };
+
   const fetchBookMetadata = async (title, author) => {
     try {
       const query = encodeURIComponent(
-        `intitle:${title}${author ? "+inauthor:" + author : ""}`,
+        `intitle:${title}${author && author !== "Unknown Author" ? "+inauthor:" + author : ""}`,
       );
+      const apiKey = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || "";
       const response = await fetch(
-        `https://www.googleapis.com/books/v1/volumes?q=${query}`,
+        `https://www.googleapis.com/books/v1/volumes?q=${query}&maxResults=5` +
+          (apiKey ? `&key=${apiKey}` : ``)
       );
       const data = await response.json();
 
       if (data.items && data.items.length > 0) {
-        const info = data.items[0].volumeInfo;
+        // Prefer a result that actually has a cover image
+        const item =
+          data.items.find((v) => v.volumeInfo?.imageLinks?.thumbnail) ||
+          data.items[0];
+        const info = item.volumeInfo;
+
+        // Fetch the full volume record to get higher-quality imageLinks
+        let fullImageLinks = info.imageLinks || {};
+        try {
+          const volumeRes = await fetch(
+            `https://www.googleapis.com/books/v1/volumes/${item.id}` +
+              (apiKey ? `?key=${apiKey}` : ``)
+          );
+          const volumeData = await volumeRes.json();
+          if (volumeData.volumeInfo?.imageLinks) {
+            fullImageLinks = volumeData.volumeInfo.imageLinks;
+          }
+        } catch {}
+
+        // Pick best available quality from full volume record
+        const rawCover =
+          fullImageLinks.extraLarge ||
+          fullImageLinks.large ||
+          fullImageLinks.medium ||
+          fullImageLinks.small ||
+          fullImageLinks.thumbnail ||
+          fullImageLinks.smallThumbnail ||
+          null;
+
+        // Try zoom=0 with validation, fallback to zoom=1
+        const cover = await getBestCoverUrl(rawCover);
+
         return {
+          author: info.authors?.join(", ") || "",
           description: info.description || "",
-          cover:
-            info.imageLinks?.thumbnail ||
-            info.imageLinks?.smallThumbnail ||
-            null,
+          cover,
           publisher: info.publisher || "",
           publishedDate: info.publishedDate || "",
           pageCount: info.pageCount || 0,
@@ -201,7 +448,27 @@ export function LibraryProvider({ children }) {
     } catch (err) {
       console.warn("Failed to fetch metadata", err);
     }
-    return null;
+  let metadata = null;
+  // Fallback to Open Library API (no API key required)
+  try {
+    const olQuery = encodeURIComponent(`${title} ${author || ''}`);
+    const olResponse = await fetch(`https://openlibrary.org/search.json?q=${olQuery}`);
+    const olData = await olResponse.json();
+    if (olData.docs && olData.docs.length > 0) {
+      const first = olData.docs[0];
+      metadata = {
+        description: first.first_sentence?.value || '',
+        cover: first.cover_i ? `https://covers.openlibrary.org/b/id/${first.cover_i}-L.jpg` : null,
+        publisher: first.publisher?.[0] || '',
+        publishedDate: first.first_publish_year || '',
+        pageCount: first.number_of_pages_median || 0,
+        genre: detectGenre(title, author),
+      };
+    }
+  } catch (e) {
+    console.warn('Open Library fallback failed', e);
+  }
+  return metadata;
   };
 
   const toggleTheme = async () => {
@@ -365,6 +632,29 @@ export function LibraryProvider({ children }) {
         }
       }
 
+      // After extracting local metadata, fetch external metadata only for new books
+      // (books without description/cover that also have no publisher, indicating truly un-enriched)
+      if (
+        book.fileHandle &&
+        (!updatedBook.description || !updatedBook.cover) &&
+        (book.author === "Unknown Author" || !book.publisher)
+      ) {
+        try {
+          const external = await fetchBookMetadata(updatedBook.title, updatedBook.author);
+          if (external) {
+            if (!updatedBook.description && external.description) updatedBook.description = external.description;
+            if (!updatedBook.cover && external.cover) updatedBook.cover = external.cover;
+            if (!updatedBook.publisher && external.publisher) updatedBook.publisher = external.publisher;
+            if (!updatedBook.publishedDate && external.publishedDate) updatedBook.publishedDate = external.publishedDate;
+            if (!updatedBook.pageCount && external.pageCount) updatedBook.pageCount = external.pageCount;
+            if (!updatedBook.genre && external.genre) updatedBook.genre = external.genre;
+            needsUpdate = true;
+          }
+        } catch (e) {
+          console.warn('External metadata fetch failed', e);
+        }
+      }
+
       // Generate cover thumbnail if missing
       if (!book.cover && book.fileHandle) {
         try {
@@ -396,11 +686,13 @@ export function LibraryProvider({ children }) {
     setBooks((prev) =>
       prev.map((b) => (b.id === updatedBook.id ? updatedBook : b)),
     );
+    void triggerAutoSync();
   };
 
   const deleteBook = async (bookId) => {
     await deleteBookDB(bookId);
     setBooks((prev) => prev.filter((b) => b.id !== bookId));
+    void triggerAutoSync();
   };
 
   const findBookById = (id) => {
@@ -444,30 +736,59 @@ export function LibraryProvider({ children }) {
   const updateYearlyGoal = async (goal) => {
     setYearlyGoal(goal);
     await setSetting("yearlyGoal", goal);
+    void triggerAutoSync();
   };
 
   const addManualBook = async (bookData) => {
+    let metadata = null;
+    if (!bookData.cover) {
+      try {
+        metadata = await fetchBookMetadata(bookData.title, bookData.author);
+      } catch (e) {
+        console.warn("Failed to fetch manual book metadata enrichment:", e);
+      }
+    }
+
     const newBook = {
       id: `manual-${Date.now()}`,
       title: bookData.title || "Untitled",
       author: bookData.author || "Unknown Author",
       fileHandle: null,
       category: bookData.category || "Planned",
-      genre: bookData.genre || "Other",
+      genre: bookData.genre || metadata?.genre || "Other",
       progress: bookData.category === "Completed" ? 100 : 0,
       lastRead:
         bookData.category === "Completed" ? new Date().toISOString() : null,
       addedAt: new Date().toISOString(),
-      cover: bookData.cover || null,
-      pageCount: 0,
+      cover: bookData.cover || metadata?.cover || null,
+      pageCount: metadata?.pageCount || 0,
       isFavorite: false,
       isManual: true,
       notes: bookData.notes || "",
+      description: metadata?.description || "",
+      publisher: metadata?.publisher || "",
+      publishedDate: metadata?.publishedDate || "",
     };
     await saveBook(newBook);
     setBooks((prev) => [...prev, newBook]);
+    void triggerAutoSync();
     return newBook;
   };
+
+  // Keep syncWithCloud ref up to date to avoid stale closures
+  useEffect(() => {
+    syncWithCloudRef.current = syncWithCloud;
+  }, [syncWithCloud]);
+
+  // Auto-sync interval (every 5 minutes) if enabled
+  useEffect(() => {
+    if (isSyncEnabled && syncKey) {
+      const interval = setInterval(() => {
+        if (syncWithCloudRef.current) syncWithCloudRef.current();
+      }, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [isSyncEnabled, syncKey]);
 
   return (
     <LibraryContext.Provider
@@ -494,6 +815,13 @@ export function LibraryProvider({ children }) {
         fetchBookMetadata,
         setCollections,
         findBookById,
+        syncKey,
+        isSyncEnabled,
+        lastSynced,
+        syncWithCloud,
+        enableCloudSync,
+        disableCloudSync,
+        importSyncKey,
       }}
     >
       {children}
