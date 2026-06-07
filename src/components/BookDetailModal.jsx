@@ -64,7 +64,13 @@ function timeAgo(dateStr) {
 }
 
 function BookDetailModal({ book, onClose }) {
-  const { updateBook, deleteBook, fetchBookMetadata, books } = useLibrary();
+  const {
+    updateBook,
+    deleteBook,
+    fetchBookMetadata,
+    regenerateCoverFromFile,
+    books,
+  } = useLibrary();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const coverInputRef = useRef(null);
@@ -72,26 +78,34 @@ function BookDetailModal({ book, onClose }) {
   const [isClosing, setIsClosing] = useState(false);
   const [activeTab, setActiveTab] = useState("info");
   const [isRefetching, setIsRefetching] = useState(false);
+  const [isRegeneratingCover, setIsRegeneratingCover] = useState(false);
+  const [fetchedMetaCover, setFetchedMetaCover] = useState(null);
+  const [isApplyingGoogleCover, setIsApplyingGoogleCover] = useState(false);
 
   const handleRefetchMetadata = async () => {
     setIsRefetching(true);
+    setFetchedMetaCover(null);
     try {
       const meta = await fetchBookMetadata(book.title, book.author);
       if (meta) {
         const updated = {
           ...book,
-          author: (!book.author || book.author === "Unknown Author") && meta.author
-            ? meta.author : book.author,
-          cover: book.cover || meta.cover || book.cover,
+          author:
+            (!book.author || book.author === "Unknown Author") && meta.author
+              ? meta.author
+              : book.author,
+          // Keep existing cover — never overwrite it automatically
+          cover: book.cover || meta.cover || null,
           description: book.description || meta.description || book.description,
           publisher: book.publisher || meta.publisher || book.publisher,
-          publishedDate: book.publishedDate || meta.publishedDate || book.publishedDate,
+          publishedDate:
+            book.publishedDate || meta.publishedDate || book.publishedDate,
           pageCount: book.pageCount || meta.pageCount || book.pageCount,
-          genre: book.genre !== "Other" ? book.genre : (meta.genre || book.genre),
+          genre: book.genre !== "Other" ? book.genre : meta.genre || book.genre,
         };
-        // Always overwrite cover if new one found
-        if (meta.cover) updated.cover = meta.cover;
         await updateBook(updated);
+        // Store fetched cover so user can manually apply it if they want
+        if (meta.cover) setFetchedMetaCover(meta.cover);
         addToast("Metadata refreshed! ✨", "success");
       } else {
         addToast("No data found for this book.", "info");
@@ -100,6 +114,36 @@ function BookDetailModal({ book, onClose }) {
       addToast("Fetch failed. Check your connection.", "error");
     } finally {
       setIsRefetching(false);
+    }
+  };
+
+  const handleApplyGoogleCover = async () => {
+    if (!fetchedMetaCover) return;
+    setIsApplyingGoogleCover(true);
+    try {
+      await updateBook({ ...book, cover: fetchedMetaCover });
+      setFetchedMetaCover(null);
+      addToast("Google Books cover applied! 🎨", "success");
+    } catch (e) {
+      addToast("Failed to apply cover.", "error");
+    } finally {
+      setIsApplyingGoogleCover(false);
+    }
+  };
+
+  const handleRegenerateCover = async () => {
+    setIsRegeneratingCover(true);
+    try {
+      const cover = await regenerateCoverFromFile(book);
+      if (cover) {
+        addToast("Cover re-extracted from file! 🎨", "success");
+      } else {
+        addToast("No cover found inside this file.", "info");
+      }
+    } catch (e) {
+      addToast("Failed to extract cover from file.", "error");
+    } finally {
+      setIsRegeneratingCover(false);
     }
   };
 
@@ -241,9 +285,40 @@ function BookDetailModal({ book, onClose }) {
                 disabled={isRefetching}
                 title="Re-fetch cover and metadata from the internet"
               >
-                <RefreshCw size={14} className={isRefetching ? "spinning" : ""} />
+                <RefreshCw
+                  size={14}
+                  className={isRefetching ? "spinning" : ""}
+                />
                 {isRefetching ? "Fetching..." : "Refresh Metadata"}
               </button>
+              {book.fileHandle && (
+                <button
+                  className="cover-upload-btn"
+                  onClick={handleRegenerateCover}
+                  disabled={isRegeneratingCover}
+                  title="Extract cover from the local file"
+                >
+                  <BookOpen
+                    size={14}
+                    className={isRegeneratingCover ? "spinning" : ""}
+                  />
+                  {isRegeneratingCover ? "Extracting..." : "Use Scanned Cover"}
+                </button>
+              )}
+              {fetchedMetaCover && fetchedMetaCover !== book.cover && (
+                <button
+                  className="cover-upload-btn google-cover-btn"
+                  onClick={handleApplyGoogleCover}
+                  disabled={isApplyingGoogleCover}
+                  title="Apply the cover found on Google Books"
+                >
+                  <RefreshCw
+                    size={14}
+                    className={isApplyingGoogleCover ? "spinning" : ""}
+                  />
+                  {isApplyingGoogleCover ? "Applying..." : "Use Google Cover"}
+                </button>
+              )}
               <input
                 ref={coverInputRef}
                 type="file"
@@ -263,7 +338,11 @@ function BookDetailModal({ book, onClose }) {
             <button
               className="btn btn-danger-outline modal-delete-btn"
               onClick={async () => {
-                if (window.confirm(`Are you sure you want to remove "${book.title}" from your library?`)) {
+                if (
+                  window.confirm(
+                    `Are you sure you want to remove "${book.title}" from your library?`,
+                  )
+                ) {
                   await deleteBook(book.id);
                   addToast(`"${book.title}" removed from library`, "info");
                   handleClose();

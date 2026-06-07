@@ -1,16 +1,16 @@
-import * as pdfjsLib from 'pdfjs-dist';
+import * as pdfjsLib from "pdfjs-dist";
 
 // Set up the worker
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url
+  "pdfjs-dist/build/pdf.worker.min.mjs",
+  import.meta.url,
 ).toString();
 
 /**
  * Generate a thumbnail from the first page of a PDF file handle.
  * Returns a base64 data URL string, or null on failure.
  */
-export async function generateThumbnail(fileHandle, maxWidth = 200) {
+export async function generateThumbnail(fileHandle, maxWidth = 300) {
   try {
     const file = await fileHandle.getFile();
     const arrayBuffer = await file.arrayBuffer();
@@ -23,10 +23,10 @@ export async function generateThumbnail(fileHandle, maxWidth = 200) {
     const viewport = page.getViewport({ scale });
 
     // Render to offscreen canvas
-    const canvas = document.createElement('canvas');
+    const canvas = document.createElement("canvas");
     canvas.width = viewport.width;
     canvas.height = viewport.height;
-    const context = canvas.getContext('2d');
+    const context = canvas.getContext("2d");
 
     await page.render({
       canvasContext: context,
@@ -34,14 +34,14 @@ export async function generateThumbnail(fileHandle, maxWidth = 200) {
     }).promise;
 
     // Convert to data URL (JPEG for smaller size)
-    const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
-    
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
     // Cleanup
     pdf.destroy();
-    
+
     return dataUrl;
   } catch (err) {
-    console.warn('Failed to generate thumbnail:', err.message);
+    console.warn("Failed to generate thumbnail:", err.message);
     return null;
   }
 }

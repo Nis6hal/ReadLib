@@ -1,17 +1,28 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { BookOpen, CheckCircle, ArrowRight, Flame, Target } from "lucide-react";
+import {
+  BookOpen,
+  CheckCircle,
+  ArrowRight,
+  Flame,
+  Target,
+  Library,
+  Plus,
+  User,
+  Rocket,
+  Globe,
+} from "lucide-react";
 import { useLibrary } from "../context/LibraryContext";
 import BookCard from "../components/BookCard";
 import AuthorDetailModal from "../components/AuthorDetailModal";
+import AddManualBookModal from "../components/AddManualBookModal";
 import "../App.css";
 import "./Home.css";
 
 import {
   Filter,
   FlaskConical,
-  Briefcase,
-  Utensils,
+  BookMarked,
   MoreHorizontal,
   Brain,
 } from "lucide-react";
@@ -19,43 +30,90 @@ import {
 import { BookCardSkeleton, GenreCardSkeleton } from "../components/Skeleton";
 
 function ReadingHeatmap({ history }) {
-  const today = new Date();
-  const daysToShow = 28; // 4 weeks
+  const now = new Date();
+  const dayLabels = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-  const heatmapData = Array.from({ length: daysToShow }, (_, i) => {
+  // Build weekly rows: go back up to 28 days, chunk into 7-day weeks
+  const allDays = Array.from({ length: 28 }, (_, i) => {
     const d = new Date();
-    d.setDate(today.getDate() - (daysToShow - 1 - i));
+    d.setDate(now.getDate() - (27 - i));
     const dateStr = d.toLocaleDateString("en-CA");
     const pages = history[dateStr] || 0;
-
     let level = 0;
     if (pages > 0) level = 1;
     if (pages > 20) level = 2;
     if (pages > 50) level = 3;
     if (pages > 100) level = 4;
-
-    return { date: dateStr, pages, level };
+    return { date: dateStr, pages, level, day: d.getDay() }; // 0=Sun
   });
+
+  // Chunk into weeks (Sun-Sat), pad first week
+  const weeks = [];
+  let week = [];
+  for (const day of allDays) {
+    week.push(day);
+    if (day.day === 6) {
+      // Saturday ends the week
+      weeks.push(week);
+      week = [];
+    }
+  }
+  if (week.length > 0) weeks.push(week);
+
+  // Pad short weeks to 7 cells for alignment
+  while (weeks.length > 0 && weeks[0].length < 7) {
+    weeks[0].unshift(null);
+  }
+
+  const pagesThisWeek = allDays
+    .filter((d) => d.pages > 0)
+    .slice(-7)
+    .reduce((sum, d) => sum + d.pages, 0);
 
   return (
     <div className="reading-activity card">
       <div className="activity-header">
-        <h3>Reading Consistency</h3>
-        <p>Activity over the last 4 weeks</p>
+        <div>
+          <h3>Reading Consistency</h3>
+          <p>Activity over the last 4 weeks</p>
+        </div>
+        {pagesThisWeek > 0 && (
+          <div className="week-pages-badge">
+            <BookOpen size={14} />
+            <span>{pagesThisWeek} pages this week</span>
+          </div>
+        )}
       </div>
       <div className="heatmap-container">
-        <div className="heatmap-grid">
-          {heatmapData.map((d) => (
-            <div
-              key={d.date}
-              className={`heatmap-cell level-${d.level}`}
-              title={`${d.date}: ${d.pages} pages`}
-            >
-              {d.pages > 0 && (
-                <span className="cell-tooltip">{d.pages} pages</span>
-              )}
-            </div>
-          ))}
+        <div className="heatmap-layout">
+          <div className="heatmap-day-labels">
+            {dayLabels.map((label) => (
+              <span key={label} className="heatmap-day-label">
+                {label}
+              </span>
+            ))}
+          </div>
+          <div className="heatmap-weeks">
+            {weeks.map((w, wi) => (
+              <div key={wi} className="heatmap-week-row">
+                {w.map((d, di) =>
+                  d ? (
+                    <div
+                      key={d.date}
+                      className={`heatmap-cell level-${d.level}`}
+                      title={`${d.date}: ${d.pages} pages`}
+                    >
+                      {d.pages > 0 && (
+                        <span className="cell-tooltip">{d.pages} pages</span>
+                      )}
+                    </div>
+                  ) : (
+                    <div key={di} className="heatmap-cell empty" />
+                  ),
+                )}
+              </div>
+            ))}
+          </div>
         </div>
         <div className="heatmap-legend">
           <span>Less</span>
@@ -85,6 +143,7 @@ function Home() {
   } = useLibrary();
   const navigate = useNavigate();
   const [selectedAuthor, setSelectedAuthor] = useState(null);
+  const [showManualModal, setShowManualModal] = useState(false);
 
   const streak = calculateStreak();
   const booksReadThisYear = books.filter(
@@ -151,23 +210,23 @@ function Home() {
     },
     {
       name: "Novel",
-      icon: <Briefcase size={24} />,
+      icon: <BookMarked size={24} />,
       color: "var(--bg-secondary)",
     },
     {
       name: "Biography",
-      icon: <div className="dot-icon" />,
+      icon: <User size={24} />,
       color: "var(--bg-secondary)",
     },
     {
       name: "Sci-fi",
-      icon: <Utensils size={24} />,
+      icon: <Rocket size={24} />,
       color: "var(--accent-primary)",
       textColor: "var(--bg-primary)",
     },
     {
       name: "Mystery Thriller",
-      icon: <MoreHorizontal size={24} />,
+      icon: <Globe size={24} />,
       color: "var(--bg-secondary)",
     },
     {
@@ -271,6 +330,42 @@ function Home() {
         </div>
       </div>
 
+      {/* Quick Actions */}
+      <div className="quick-actions-row">
+        <div className="quick-action-card" onClick={() => navigate("/library")}>
+          <div className="qa-icon library">
+            <Library size={22} />
+          </div>
+          <div className="qa-content">
+            <span className="qa-title">Browse Library</span>
+            <span className="qa-sub">
+              {stats.total} book{stats.total !== 1 ? "s" : ""}
+            </span>
+          </div>
+        </div>
+        <div className="quick-action-card" onClick={() => navigate("/profile")}>
+          <div className="qa-icon profile">
+            <User size={22} />
+          </div>
+          <div className="qa-content">
+            <span className="qa-title">View Profile</span>
+            <span className="qa-sub">{stats.completed} completed</span>
+          </div>
+        </div>
+        <div
+          className="quick-action-card"
+          onClick={() => setShowManualModal(true)}
+        >
+          <div className="qa-icon add">
+            <Plus size={22} />
+          </div>
+          <div className="qa-content">
+            <span className="qa-title">Add Book</span>
+            <span className="qa-sub">Manual entry</span>
+          </div>
+        </div>
+      </div>
+
       <ReadingHeatmap history={readingHistory} />
 
       {/* Previous Reading */}
@@ -288,7 +383,13 @@ function Home() {
             ))
           ) : (
             <div className="empty-section">
-              No recent reading found. Start a book from your library!
+              <p>No recent reading found. Start a book from your library!</p>
+              <button
+                className="btn btn-primary btn-sm"
+                onClick={() => navigate("/library")}
+              >
+                Browse Library
+              </button>
             </div>
           )}
         </div>
@@ -393,6 +494,9 @@ function Home() {
         </section>
       )}
 
+      {showManualModal && (
+        <AddManualBookModal onClose={() => setShowManualModal(false)} />
+      )}
       {selectedAuthor && (
         <AuthorDetailModal
           authorName={selectedAuthor}

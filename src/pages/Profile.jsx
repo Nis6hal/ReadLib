@@ -23,6 +23,7 @@ function Profile() {
     yearlyGoal,
     updateYearlyGoal,
     loading,
+    readingHistory,
     syncKey,
     isSyncEnabled,
     syncWithCloud,
@@ -43,19 +44,15 @@ function Profile() {
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
   // Sync draft states when context changes
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setDraftName(userName || "");
   }, [userName]);
 
-// eslint-disable-next-line react-hooks/exhaustive-deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     setDraftGoal(yearlyGoal || 50);
   }, [yearlyGoal]);
-
-
-
-
 
   const saveName = async () => {
     if (draftName.trim() && draftName !== userName) {
@@ -92,6 +89,39 @@ function Profile() {
     stats.reading,
     stats.completed,
     1,
+  );
+
+  // Compute genre breakdown
+  const genreMap = books.reduce((acc, book) => {
+    const genre = book.genre || "Other";
+    acc[genre] = (acc[genre] || 0) + 1;
+    return acc;
+  }, {});
+  const genreEntries = Object.entries(genreMap).sort((a, b) => b[1] - a[1]);
+  const maxGenreCount = genreEntries.length > 0 ? genreEntries[0][1] : 1;
+
+  // Top author
+  const authorCounts = books.reduce((acc, book) => {
+    const author = book.author || "Unknown Author";
+    if (author === "Unknown Author") return acc;
+    acc[author] = (acc[author] || 0) + 1;
+    return acc;
+  }, {});
+  const topAuthorEntry = Object.entries(authorCounts).sort(
+    (a, b) => b[1] - a[1],
+  )[0];
+
+  // Reading this month
+  const now = new Date();
+  const thisMonth = now.toLocaleDateString("en-CA").slice(0, 7); // YYYY-MM
+  const pagesThisMonth = Object.entries(readingHistory || {})
+    .filter(([date]) => date.startsWith(thisMonth))
+    .reduce((sum, [, pages]) => sum + pages, 0);
+
+  // Total pages read all time
+  const totalPages = Object.values(readingHistory || {}).reduce(
+    (sum, pages) => sum + pages,
+    0,
   );
 
   // Get reading rank
@@ -159,7 +189,10 @@ function Profile() {
                   onKeyDown={(e) => e.key === "Enter" && saveGoal()}
                   autoFocus
                 />
-                <button className="btn-icon profile-save-btn" onClick={saveGoal}>
+                <button
+                  className="btn-icon profile-save-btn"
+                  onClick={saveGoal}
+                >
                   <Check size={14} />
                 </button>
               </div>
@@ -217,6 +250,13 @@ function Profile() {
           <span className="stat-value">{stats.reading}</span>
           <span className="stat-label">In Progress</span>
         </div>
+        <div className="card stat-card pages">
+          <div className="stat-icon pages">
+            <BookOpen size={20} />
+          </div>
+          <span className="stat-value">{pagesThisMonth}</span>
+          <span className="stat-label">Pages This Month</span>
+        </div>
       </div>
 
       {/* Category Distribution */}
@@ -270,6 +310,33 @@ function Profile() {
         </div>
       </div>
 
+      {/* Genre Breakdown */}
+      {genreEntries.length > 0 && (
+        <div className="card profile-chart-card fade-in fade-in-delay-3">
+          <h3 className="section-title">
+            <BookOpen size={20} /> Genre Breakdown
+          </h3>
+          <div className="genre-bars">
+            {genreEntries.map(([genre, count]) => (
+              <div key={genre} className="genre-bar-row">
+                <span className="genre-bar-label">{genre}</span>
+                <div className="genre-bar-track">
+                  <div
+                    className="genre-bar-fill"
+                    style={{
+                      width: animated
+                        ? `${(count / maxGenreCount) * 100}%`
+                        : "0%",
+                    }}
+                  ></div>
+                </div>
+                <span className="genre-bar-count">{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Reading Streak / Fun facts */}
       <div className="card profile-facts fade-in fade-in-delay-4">
         <h3 className="section-title">
@@ -304,6 +371,24 @@ function Profile() {
               <span className="fact-text">On the list</span>
             </div>
           </div>
+          <div className="fact-item">
+            <span className="fact-emoji">📄</span>
+            <div className="fact-content">
+              <span className="fact-value">{totalPages.toLocaleString()}</span>
+              <span className="fact-text">Pages read total</span>
+            </div>
+          </div>
+          {topAuthorEntry && (
+            <div className="fact-item">
+              <span className="fact-emoji">✍️</span>
+              <div className="fact-content">
+                <span className="fact-value">{topAuthorEntry[0]}</span>
+                <span className="fact-text">
+                  {topAuthorEntry[1]} book{topAuthorEntry[1] !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

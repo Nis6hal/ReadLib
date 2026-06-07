@@ -47,7 +47,12 @@ async function fitPdfToWidth(pdf, pageNum, setScale) {
 function PdfViewer() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { findBookById, updateBook, logReadingSession, loading: libraryLoading } = useLibrary();
+  const {
+    findBookById,
+    updateBook,
+    logReadingSession,
+    loading: libraryLoading,
+  } = useLibrary();
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
@@ -68,6 +73,7 @@ function PdfViewer() {
   const [sessionSeconds, setSessionSeconds] = useState(0);
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
+  const touchStartX = useRef(null);
 
   // Reading timer
   useEffect(() => {
@@ -136,7 +142,10 @@ function PdfViewer() {
               savedPage = pageNum;
             }
           } else if (book.progress > 0) {
-            savedPage = Math.max(1, Math.round((book.progress / 100) * pdf.numPages));
+            savedPage = Math.max(
+              1,
+              Math.round((book.progress / 100) * pdf.numPages),
+            );
           }
           setCurrentPage(savedPage);
           setPageInput(savedPage.toString());
@@ -167,7 +176,13 @@ function PdfViewer() {
 
   // Render a page
   const renderPage = useCallback(
-    async (pageNum, canvas, isList = false, textLayerDiv = null, renderCanvas = true) => {
+    async (
+      pageNum,
+      canvas,
+      isList = false,
+      textLayerDiv = null,
+      renderCanvas = true,
+    ) => {
       if (!pdfDoc || !canvas) return;
 
       try {
@@ -191,22 +206,22 @@ function PdfViewer() {
           }).promise;
         }
 
-          // Render text layer
-          if (textLayerDiv) {
-            textLayerDiv.innerHTML = "";
-            textLayerDiv.style.width = `${viewport.width}px`;
-            textLayerDiv.style.height = `${viewport.height}px`;
-            textLayerDiv.style.left = "0px";
-            textLayerDiv.style.top = "0px";
+        // Render text layer
+        if (textLayerDiv) {
+          textLayerDiv.innerHTML = "";
+          textLayerDiv.style.width = `${viewport.width}px`;
+          textLayerDiv.style.height = `${viewport.height}px`;
+          textLayerDiv.style.left = "0px";
+          textLayerDiv.style.top = "0px";
 
-            const textContent = await page.getTextContent();
-            const textLayer = new pdfjsLib.TextLayer({
-              textContentSource: textContent,
-              container: textLayerDiv,
-              viewport: viewport,
-            });
-            await textLayer.render();
-          }
+          const textContent = await page.getTextContent();
+          const textLayer = new pdfjsLib.TextLayer({
+            textContentSource: textContent,
+            container: textLayerDiv,
+            viewport: viewport,
+          });
+          await textLayer.render();
+        }
       } catch (err) {
         console.error("Error rendering page:", err);
       }
@@ -296,6 +311,21 @@ function PdfViewer() {
     const ratio = x / rect.width;
     if (ratio < 0.3) goToPrev();
     else if (ratio > 0.7) goToNext();
+  };
+
+  // Touch swipe support for mobile
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null || viewMode !== "single") return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    touchStartX.current = null;
+    // Only trigger on significant horizontal swipe (> 50px)
+    if (Math.abs(deltaX) < 50) return;
+    if (deltaX > 0) goToPrev();
+    else goToNext();
   };
 
   const goToPrev = useCallback(() => {
@@ -469,7 +499,11 @@ function PdfViewer() {
       <div className="pdf-viewer-container">
         <div className="loading-container">
           <div className="spinner"></div>
-          <p>{libraryLoading ? "Loading library database..." : "Opening your PDF..."}</p>
+          <p>
+            {libraryLoading
+              ? "Loading library database..."
+              : "Opening your PDF..."}
+          </p>
         </div>
       </div>
     );
@@ -642,6 +676,8 @@ function PdfViewer() {
           <div
             className="pdf-canvas-wrapper single-view"
             onClick={handleCanvasClick}
+            onTouchStart={handleTouchStart}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="pdf-page-container">
               <canvas ref={canvasRef} className="pdf-canvas"></canvas>
@@ -702,7 +738,13 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
         // Render heavy text layer with additional delay
         textLayerTimer = setTimeout(() => {
           if (canvasRef.current) {
-            renderPage(pageNum, canvasRef.current, true, textLayerRef.current, false);
+            renderPage(
+              pageNum,
+              canvasRef.current,
+              true,
+              textLayerRef.current,
+              false,
+            );
           }
         }, 250);
       }, 80);
