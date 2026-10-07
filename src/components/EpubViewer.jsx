@@ -8,27 +8,15 @@ import {
   Sun,
   Moon,
   Coffee,
+  Bookmark,
+  BookmarkPlus,
+  Trash2,
+  X,
 } from "lucide-react";
 import ePub from "epubjs";
 import { useLibrary } from "../context/LibraryContext";
 import { verifyPermission } from "../services/db";
 import "./EpubViewer.css";
-
-function applyRenditionTheme(rendition, theme) {
-  const themes = rendition.themes;
-  const bgColor =
-    theme === "night" ? "#0f172a" : theme === "sepia" ? "#f4ecd8" : "#ffffff";
-  const textColor = theme === "night" ? "#cbd5e1" : "#334155";
-
-  themes.register(theme, {
-    body: {
-      background: `${bgColor} !important`,
-      color: `${textColor} !important`,
-      "font-family": "'Inter', sans-serif !important",
-    },
-  });
-  themes.select(theme);
-}
 
 function EpubViewer() {
   const { id } = useParams();
@@ -42,6 +30,8 @@ function EpubViewer() {
   const [error, setError] = useState(null);
   const [readerTheme, setReaderTheme] = useState("light");
   const [fontSize, setFontSize] = useState(100);
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [fontFamily, setFontFamily] = useState("inter");
 
   const bookData = findBookById(id);
   const bookDataRef = useRef(bookData);
@@ -56,11 +46,35 @@ function EpubViewer() {
       ? "Book not found or file handle unavailable."
       : null;
 
-  const applyTheme = useCallback((theme) => {
-    if (!renditionRef.current) return;
-    applyRenditionTheme(renditionRef.current, theme);
-    setReaderTheme(theme);
-  }, []);
+  const applyTheme = useCallback(
+    (theme) => {
+      if (!renditionRef.current) return;
+      const themes = renditionRef.current.themes;
+      const bgColor =
+        theme === "night"
+          ? "#0f172a"
+          : theme === "sepia"
+            ? "#f4ecd8"
+            : "#ffffff";
+      const textColor = theme === "night" ? "#cbd5e1" : "#334155";
+      const fonts = {
+        inter: "'Inter', sans-serif",
+        serif: "Georgia, 'Times New Roman', serif",
+        mono: "'JetBrains Mono', 'Fira Code', monospace",
+        system: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      };
+      themes.register(theme, {
+        body: {
+          background: `${bgColor} !important`,
+          color: `${textColor} !important`,
+          "font-family": `${fonts[fontFamily] || fonts.inter} !important`,
+        },
+      });
+      themes.select(theme);
+      setReaderTheme(theme);
+    },
+    [fontFamily],
+  );
 
   useEffect(() => {
     if (libraryLoading) return;
@@ -71,7 +85,9 @@ function EpubViewer() {
 
     async function loadEpub() {
       try {
-        const hasPermission = await verifyPermission(currentBookSnapshot.fileHandle);
+        const hasPermission = await verifyPermission(
+          currentBookSnapshot.fileHandle,
+        );
         if (!hasPermission) {
           setError("Permission denied. Please grant access in Settings.");
           setLoading(false);
@@ -114,7 +130,9 @@ function EpubViewer() {
                 lastLocation: loc.start.cfi,
                 lastRead: new Date().toISOString(),
                 category:
-                  currentBookData.category === "Planned" ? "Reading" : currentBookData.category,
+                  currentBookData.category === "Planned"
+                    ? "Reading"
+                    : currentBookData.category,
               });
             }
           }
@@ -156,6 +174,43 @@ function EpubViewer() {
     }
   };
 
+  const addBookmark = () => {
+    if (!renditionRef.current || !bookData) return;
+    const loc = renditionRef.current.location;
+    if (!loc) return;
+    const cfi = loc.start.cfi;
+    const label = `Page ${loc.start.display}`;
+    const newBookmark = {
+      id: `bm-${Date.now()}`,
+      cfi,
+      label: prompt("Bookmark name:", label) || label,
+      createdAt: new Date().toISOString(),
+    };
+    const updatedBook = {
+      ...bookData,
+      bookmarks: [...(bookData.bookmarks || []), newBookmark],
+    };
+    updateBook(updatedBook);
+  };
+
+  const jumpToBookmark = (cfi) => {
+    if (renditionRef.current) {
+      renditionRef.current.display(cfi);
+      setShowBookmarks(false);
+    }
+  };
+
+  const deleteBookmark = (bookmarkId) => {
+    if (!bookData) return;
+    const updatedBook = {
+      ...bookData,
+      bookmarks: (bookData.bookmarks || []).filter(
+        (bm) => bm.id !== bookmarkId,
+      ),
+    };
+    updateBook(updatedBook);
+  };
+
   if (missingBookError)
     return (
       <div className="epub-viewer-error">
@@ -171,7 +226,11 @@ function EpubViewer() {
     return (
       <div className="epub-viewer-loading">
         <div className="spinner"></div>
-        <p>{libraryLoading ? "Loading library database..." : "Opening your book..."}</p>
+        <p>
+          {libraryLoading
+            ? "Loading library database..."
+            : "Opening your book..."}
+        </p>
       </div>
     );
 
@@ -231,6 +290,37 @@ function EpubViewer() {
             </button>
           </div>
           <div className="toolbar-divider"></div>
+          <select
+            className="font-select"
+            value={fontFamily}
+            onChange={(e) => {
+              setFontFamily(e.target.value);
+              if (renditionRef.current) {
+                applyTheme(readerTheme);
+              }
+            }}
+          >
+            <option value="inter">Inter</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Mono</option>
+            <option value="system">System</option>
+          </select>
+          <div className="toolbar-divider"></div>
+          <button
+            className="btn btn-icon"
+            onClick={addBookmark}
+            title="Add Bookmark"
+          >
+            <BookmarkPlus size={18} />
+          </button>
+          <button
+            className="btn btn-icon"
+            onClick={() => setShowBookmarks(!showBookmarks)}
+            title="Bookmarks"
+          >
+            <Bookmark size={18} />
+          </button>
+          <div className="toolbar-divider"></div>
           <button
             className="btn btn-icon"
             onClick={toggleFullscreen}
@@ -257,6 +347,45 @@ function EpubViewer() {
       >
         <ChevronRight size={32} />
       </button>
+      {showBookmarks && (
+        <div className="bookmarks-panel">
+          <div className="bookmarks-panel-header">
+            <h3>Bookmarks</h3>
+            <button
+              className="btn btn-icon"
+              onClick={() => setShowBookmarks(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="bookmarks-list">
+            {(bookData?.bookmarks || []).length === 0 ? (
+              <p className="bookmarks-empty">
+                No bookmarks yet. Add one from the toolbar!
+              </p>
+            ) : (
+              (bookData?.bookmarks || []).map((bm) => (
+                <div key={bm.id} className="bookmark-item">
+                  <div
+                    className="bookmark-info"
+                    onClick={() => jumpToBookmark(bm.cfi)}
+                  >
+                    <Bookmark size={14} />
+                    <span className="bookmark-label">{bm.label}</span>
+                  </div>
+                  <button
+                    className="btn btn-icon btn-icon-sm"
+                    onClick={() => deleteBookmark(bm.id)}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

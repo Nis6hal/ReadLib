@@ -17,9 +17,7 @@ export function Skeleton({
 export function BookCardSkeleton() {
   return (
     <div className="skeleton-card">
-      <Skeleton height="170px" borderRadius="12px" className="mb-2" />
-      <Skeleton width="80%" height="16px" className="mb-1" />
-      <Skeleton width="50%" height="12px" />
+      <Skeleton width="100%" height="100%" borderRadius="16px" />
     </div>
   );
 }

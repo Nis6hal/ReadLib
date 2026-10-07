@@ -13,6 +13,9 @@ import {
   Target,
   Cloud,
   Sparkles,
+  Download,
+  Upload,
+  Clock,
 } from "lucide-react";
 import { useLibrary } from "../context/LibraryContext";
 import { useToast } from "../components/Toast";
@@ -40,13 +43,24 @@ function Settings() {
     importSyncKey,
     fetchBookMetadata,
     updateBook,
+    autoTheme,
+    autoThemeLightUntil,
+    autoThemeDarkUntil,
+    backupData,
+    restoreData,
+    updateAutoTheme,
+    updateAutoThemeSchedule,
   } = useLibrary();
   const { addToast } = useToast();
   const [isScanning, setIsScanning] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const [importKeyVal, setImportKeyVal] = useState("");
   const [isRefreshingAll, setIsRefreshingAll] = useState(false);
-  const [refreshProgress, setRefreshProgress] = useState({ current: 0, total: 0, updated: 0 });
+  const [refreshProgress, setRefreshProgress] = useState({
+    current: 0,
+    total: 0,
+    updated: 0,
+  });
 
   const handleManualSync = async () => {
     setIsSyncing(true);
@@ -123,8 +137,7 @@ function Settings() {
             changes.publishedDate = meta.publishedDate;
           if (meta.pageCount && !book.pageCount)
             changes.pageCount = meta.pageCount;
-          if (meta.genre && book.genre === "Other")
-            changes.genre = meta.genre;
+          if (meta.genre && book.genre === "Other") changes.genre = meta.genre;
 
           if (Object.keys(changes).length > 0) {
             await updateBook({ ...book, ...changes });
@@ -140,7 +153,10 @@ function Settings() {
     }
 
     setRefreshProgress({ current: total, total, updated });
-    addToast(`Metadata refreshed! ${updated} of ${total} books updated ✨`, "success");
+    addToast(
+      `Metadata refreshed! ${updated} of ${total} books updated ✨`,
+      "success",
+    );
     setIsRefreshingAll(false);
   };
 
@@ -261,6 +277,106 @@ function Settings() {
         </div>
       </div>
 
+      {/* Auto Theme */}
+      <div className="card settings-section fade-in fade-in-delay-2">
+        <div className="settings-section-header">
+          <div className="settings-icon-wrap theme">
+            <Clock size={18} />
+          </div>
+          <div>
+            <h3 className="settings-section-title">Auto Theme</h3>
+            <p className="settings-desc">
+              Automatically switch between dark and light modes based on time.
+            </p>
+          </div>
+        </div>
+        <div
+          className="theme-toggle-container"
+          style={{
+            flexDirection: "column",
+            alignItems: "flex-start",
+            gap: "1rem",
+          }}
+        >
+          <button
+            className="theme-toggle-btn"
+            onClick={() => updateAutoTheme(!autoTheme)}
+          >
+            <div className={`theme-toggle-track ${autoTheme ? "" : "light"}`}>
+              <div className="theme-toggle-thumb">
+                {autoTheme ? <Sun size={12} /> : <Moon size={12} />}
+              </div>
+            </div>
+            <span className="theme-toggle-label">
+              {autoTheme ? "Auto theme enabled" : "Auto theme disabled"}
+            </span>
+          </button>
+          {autoTheme && (
+            <div
+              className="auto-theme-schedule"
+              style={{ display: "flex", gap: "1.5rem", flexWrap: "wrap" }}
+            >
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  fontSize: "0.85rem",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Dark mode from
+                <select
+                  className="input"
+                  style={{ width: "auto", padding: "0.3rem 0.5rem" }}
+                  value={autoThemeDarkUntil}
+                  onChange={(e) =>
+                    updateAutoThemeSchedule(
+                      parseInt(e.target.value),
+                      autoThemeLightUntil,
+                    )
+                  }
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  fontSize: "0.85rem",
+                  color: "var(--text-secondary)",
+                }}
+              >
+                Light mode from
+                <select
+                  className="input"
+                  style={{ width: "auto", padding: "0.3rem 0.5rem" }}
+                  value={autoThemeLightUntil}
+                  onChange={(e) =>
+                    updateAutoThemeSchedule(
+                      autoThemeDarkUntil,
+                      parseInt(e.target.value),
+                    )
+                  }
+                >
+                  {Array.from({ length: 24 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i.toString().padStart(2, "0")}:00
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Cloud Sync */}
       <div className="card settings-section fade-in fade-in-delay-3">
         <div className="settings-section-header">
@@ -270,7 +386,8 @@ function Settings() {
           <div>
             <h3 className="settings-section-title">Cloud Sync</h3>
             <p className="settings-desc">
-              Synchronize your library metadata, reading stats, and progress across devices.
+              Synchronize your library metadata, reading stats, and progress
+              across devices.
             </p>
           </div>
         </div>
@@ -326,7 +443,8 @@ function Settings() {
                 </button>
               </div>
               <p className="sync-key-help">
-                ⚠️ Keep this key private. Use it on another device to link your library.
+                ⚠️ Keep this key private. Use it on another device to link your
+                library.
               </p>
             </div>
           )}
@@ -334,7 +452,10 @@ function Settings() {
           {!isSyncEnabled && (
             <div className="sync-restore-box glass-panel">
               <h4>Link / Restore Existing Library</h4>
-              <p>Enter a Sync Key from another device to restore or merge your data.</p>
+              <p>
+                Enter a Sync Key from another device to restore or merge your
+                data.
+              </p>
               <div className="sync-key-input-row">
                 <input
                   type="text"
@@ -382,7 +503,10 @@ function Settings() {
             disabled={isRefreshingAll || books.length === 0}
             id="refresh-all-metadata-btn"
           >
-            <Sparkles size={16} className={isRefreshingAll ? "spin-icon" : ""} />
+            <Sparkles
+              size={16}
+              className={isRefreshingAll ? "spin-icon" : ""}
+            />
             {isRefreshingAll
               ? `Refreshing ${refreshProgress.current}/${refreshProgress.total}...`
               : "Refresh All Metadata"}
@@ -400,14 +524,41 @@ function Settings() {
             <div className="refresh-progress-bar">
               <div
                 className="refresh-progress-fill"
-                style={{ width: `${(refreshProgress.current / refreshProgress.total) * 100}%` }}
+                style={{
+                  width: `${(refreshProgress.current / refreshProgress.total) * 100}%`,
+                }}
               ></div>
             </div>
             <span className="refresh-progress-text">
-              {refreshProgress.current} / {refreshProgress.total} checked · {refreshProgress.updated} updated
+              {refreshProgress.current} / {refreshProgress.total} checked ·{" "}
+              {refreshProgress.updated} updated
             </span>
           </div>
         )}
+      </div>
+
+      {/* Backup & Restore */}
+      <div className="card settings-section fade-in fade-in-delay-3">
+        <div className="settings-section-header">
+          <div className="settings-icon-wrap data">
+            <Download size={18} />
+          </div>
+          <div>
+            <h3 className="settings-section-title">Backup & Restore</h3>
+            <p className="settings-desc">
+              Save or restore all your library data, reading stats, and
+              settings.
+            </p>
+          </div>
+        </div>
+        <div className="settings-actions">
+          <button className="btn btn-primary" onClick={backupData}>
+            <Download size={16} /> Backup All Data
+          </button>
+          <button className="btn btn-secondary" onClick={restoreData}>
+            <Upload size={16} /> Restore from Backup
+          </button>
+        </div>
       </div>
 
       {/* Yearly Goal */}

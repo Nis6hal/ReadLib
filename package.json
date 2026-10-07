@@ -1,8 +1,8 @@
 {
   "name": "readlib",
   "private": true,
-  "version": "0.0.1",
-  "description": "A desktop library and reading tracker for EPUB and PDF books.",
+  "version": "1.0.0",
+  "description": "ReadLib — A premium desktop reading tracker and library manager for EPUB and PDF books.",
   "author": "ReadLib",
   "type": "module",
   "main": "electron/main.js",
@@ -59,7 +59,7 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "icon.png"
+      "icon": "build/icon.png"
     }
   }
 }

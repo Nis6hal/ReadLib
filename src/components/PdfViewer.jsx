@@ -14,6 +14,10 @@ import {
   Moon,
   Coffee,
   Timer,
+  Bookmark,
+  BookmarkPlus,
+  Trash2,
+  X,
 } from "lucide-react";
 import * as pdfjsLib from "pdfjs-dist";
 import { useLibrary } from "../context/LibraryContext";
@@ -56,6 +60,9 @@ function PdfViewer() {
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const containerRef = useRef(null);
+  const pdfDocRef = useRef(null);
+  const loadingTaskRef = useRef(null);
+  const lastSavedPageRef = useRef(null);
 
   const [pdfDoc, setPdfDoc] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -71,6 +78,8 @@ function PdfViewer() {
   const [readerTheme, setReaderTheme] = useState("light"); // 'light', 'sepia', 'night'
   const [pageInput, setPageInput] = useState("1");
   const [sessionSeconds, setSessionSeconds] = useState(0);
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const [fontFamily, setFontFamily] = useState("inter");
   const bookRef = useRef(null);
   const lastLoggedPage = useRef(0);
   const touchStartX = useRef(null);
@@ -101,10 +110,28 @@ function PdfViewer() {
   }, [book]);
 
   const fitToWidth = useCallback(() => {
-    return fitPdfToWidth(pdfDoc, currentPage, setScale);
+    return fitPdfToWidth(pdfDocRef.current || pdfDoc, currentPage, setScale);
   }, [pdfDoc, currentPage]);
 
-  // Load the PDF
+  // Clean up PDF on unmount
+  useEffect(() => {
+    return () => {
+      if (loadingTaskRef.current) {
+        try {
+          loadingTaskRef.current.destroy();
+        } catch {}
+        loadingTaskRef.current = null;
+      }
+      if (pdfDocRef.current) {
+        try {
+          pdfDocRef.current.destroy();
+        } catch {}
+        pdfDocRef.current = null;
+      }
+    };
+  }, []);
+
+  // Load the PDF - only triggers when book ID / fileHandle changes or library finish loading
   useEffect(() => {
     if (libraryLoading || !book?.fileHandle) return;
 
@@ -112,6 +139,9 @@ function PdfViewer() {
 
     async function loadPdf() {
       try {
+        setLoading(true);
+        setError(null);
+
         const hasPermission = await verifyPermission(book.fileHandle);
         if (!hasPermission) {
           setError(
@@ -123,58 +153,86 @@ function PdfViewer() {
 
         const file = await book.fileHandle.getFile();
         const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
-        if (!cancelled) {
-          setPdfDoc(pdf);
-          setTotalPages(pdf.numPages);
+        // Destroy previous pdfDoc if any
+        if (pdfDocRef.current) {
+          try {
+            await pdfDocRef.current.destroy();
+          } catch {}
+          pdfDocRef.current = null;
+        }
 
-          // Get first page dimensions for placeholders
-          const firstPage = await pdf.getPage(1);
-          const vp = firstPage.getViewport({ scale: 1 });
-          setPageDimensions({ width: vp.width, height: vp.height });
+        const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+        loadingTaskRef.current = loadingTask;
 
-          // Restore last read page accurately from lastLocation
-          let savedPage = 1;
-          if (book.lastLocation && book.lastLocation.startsWith("page-")) {
-            const pageNum = parseInt(book.lastLocation.replace("page-", ""));
-            if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pdf.numPages) {
-              savedPage = pageNum;
-            }
-          } else if (book.progress > 0) {
-            savedPage = Math.max(
-              1,
-              Math.round((book.progress / 100) * pdf.numPages),
-            );
+        const pdf = await loadingTask.promise;
+
+        if (cancelled) {
+          try {
+            pdf.destroy();
+          } catch {}
+          return;
+        }
+
+        pdfDocRef.current = pdf;
+        setPdfDoc(pdf);
+        setTotalPages(pdf.numPages);
+
+        // Get first page dimensions for placeholders
+        const firstPage = await pdf.getPage(1);
+        const vp = firstPage.getViewport({ scale: 1 });
+        setPageDimensions({ width: vp.width, height: vp.height });
+
+        // Restore last read page accurately from current book metadata
+        const currentBook = bookRef.current || book;
+        let savedPage = 1;
+        if (currentBook?.lastLocation && currentBook.lastLocation.startsWith("page-")) {
+          const pageNum = parseInt(currentBook.lastLocation.replace("page-", ""));
+          if (!isNaN(pageNum) && pageNum >= 1 && pageNum <= pdf.numPages) {
+            savedPage = pageNum;
           }
-          setCurrentPage(savedPage);
-          setPageInput(savedPage.toString());
-          lastLoggedPage.current = savedPage;
-          setLoading(false);
-          if (window.innerWidth < 500) {
-            setTimeout(() => {
-              void fitPdfToWidth(pdf, savedPage, setScale);
-            }, 300);
-          }
+        } else if (currentBook?.progress > 0) {
+          savedPage = Math.max(
+            1,
+            Math.round((currentBook.progress / 100) * pdf.numPages),
+          );
+        }
+
+        setCurrentPage(savedPage);
+        setPageInput(savedPage.toString());
+        lastLoggedPage.current = savedPage;
+        lastSavedPageRef.current = savedPage;
+        setLoading(false);
+
+        if (window.innerWidth < 500) {
+          setTimeout(() => {
+            void fitPdfToWidth(pdf, savedPage, setScale);
+          }, 300);
         }
       } catch (err) {
+        if (cancelled) return;
         console.error("Error loading PDF:", err);
-        if (!cancelled) {
-          setError(
-            "Failed to load PDF. Try re-selecting the library folder in Settings.",
-          );
-          setLoading(false);
-        }
+        setError(
+          "Failed to load PDF. Try re-selecting the library folder in Settings.",
+        );
+        setLoading(false);
       }
     }
 
     loadPdf();
+
     return () => {
       cancelled = true;
+      if (loadingTaskRef.current) {
+        try {
+          loadingTaskRef.current.destroy();
+        } catch {}
+        loadingTaskRef.current = null;
+      }
     };
-  }, [book, fitToWidth, libraryLoading]);
+  }, [id, book?.fileHandle, libraryLoading]);
 
-  // Render a page
+  // Render a page with cancellation support
   const renderPage = useCallback(
     async (
       pageNum,
@@ -192,18 +250,42 @@ function PdfViewer() {
         });
 
         if (renderCanvas) {
+          // Cancel previous render on this canvas if active
+          if (canvas._renderTask) {
+            try {
+              canvas._renderTask.cancel();
+            } catch {}
+            canvas._renderTask = null;
+          }
+
           const context = canvas.getContext("2d");
-          const dpr = window.devicePixelRatio || 1;
-          canvas.width = viewport.width * dpr;
-          canvas.height = viewport.height * dpr;
+          const dpr = isList
+            ? Math.min(window.devicePixelRatio || 1, 1.5)
+            : window.devicePixelRatio || 1;
+          canvas.width = Math.floor(viewport.width * dpr);
+          canvas.height = Math.floor(viewport.height * dpr);
           canvas.style.width = `${viewport.width}px`;
           canvas.style.height = `${viewport.height}px`;
           context.scale(dpr, dpr);
 
-          await page.render({
+          const renderTask = page.render({
             canvasContext: context,
             viewport: viewport,
-          }).promise;
+          });
+          canvas._renderTask = renderTask;
+
+          try {
+            await renderTask.promise;
+          } catch (renderErr) {
+            if (renderErr?.name === "RenderingCancelledException") {
+              return;
+            }
+            throw renderErr;
+          } finally {
+            if (canvas._renderTask === renderTask) {
+              canvas._renderTask = null;
+            }
+          }
         }
 
         // Render text layer
@@ -223,7 +305,9 @@ function PdfViewer() {
           await textLayer.render();
         }
       } catch (err) {
-        console.error("Error rendering page:", err);
+        if (err?.name !== "RenderingCancelledException") {
+          console.error("Error rendering page:", err);
+        }
       }
     },
     [pdfDoc, scale],
@@ -235,33 +319,41 @@ function PdfViewer() {
     }
   }, [pdfDoc, currentPage, scale, viewMode, loading, renderPage]);
 
-  // Save progress and log session
+  // Save progress and log session only when currentPage changes from saved
   useEffect(() => {
-    if (bookRef.current && totalPages > 0 && pdfDoc) {
-      const progress = Math.round((currentPage / totalPages) * 100);
-      const updatedBook = {
-        ...bookRef.current,
-        progress,
-        lastLocation: `page-${currentPage}`,
-        lastRead: new Date().toISOString(),
-        category:
-          bookRef.current.category === "Planned"
-            ? "Reading"
-            : bookRef.current.category,
-      };
-
-      // Log reading session if we've moved forward
-      if (currentPage > lastLoggedPage.current) {
-        logReadingSession(currentPage - lastLoggedPage.current);
-        lastLoggedPage.current = currentPage;
-      }
-
-      if (currentPage === totalPages) {
-        updatedBook.progress = 100;
-        updatedBook.category = "Completed";
-      }
-      updateBook(updatedBook);
+    if (
+      !bookRef.current ||
+      totalPages <= 0 ||
+      !pdfDoc ||
+      currentPage === lastSavedPageRef.current
+    ) {
+      return;
     }
+
+    lastSavedPageRef.current = currentPage;
+    const progress = Math.round((currentPage / totalPages) * 100);
+    const updatedBook = {
+      ...bookRef.current,
+      progress,
+      lastLocation: `page-${currentPage}`,
+      lastRead: new Date().toISOString(),
+      category:
+        bookRef.current.category === "Planned"
+          ? "Reading"
+          : bookRef.current.category,
+    };
+
+    // Log reading session if we've moved forward
+    if (currentPage > lastLoggedPage.current) {
+      logReadingSession(currentPage - lastLoggedPage.current);
+      lastLoggedPage.current = currentPage;
+    }
+
+    if (currentPage === totalPages) {
+      updatedBook.progress = 100;
+      updatedBook.category = "Completed";
+    }
+    updateBook(updatedBook);
   }, [currentPage, totalPages, pdfDoc, logReadingSession, updateBook]);
 
   const isJumping = useRef(false);
@@ -477,6 +569,55 @@ function PdfViewer() {
     };
   }, [viewMode, currentPage]);
 
+  const addBookmark = () => {
+    if (!bookRef.current) return;
+    const newBookmark = {
+      id: `bm-${Date.now()}`,
+      page: currentPage,
+      label:
+        prompt("Bookmark name:", `Page ${currentPage}`) ||
+        `Page ${currentPage}`,
+      createdAt: new Date().toISOString(),
+    };
+    const updatedBook = {
+      ...bookRef.current,
+      bookmarks: [...(bookRef.current.bookmarks || []), newBookmark],
+    };
+    updateBook(updatedBook);
+  };
+
+  const jumpToBookmark = (page) => {
+    jumpToPage(page);
+    setShowBookmarks(false);
+  };
+
+  const deleteBookmark = (bookmarkId) => {
+    if (!bookRef.current) return;
+    const updatedBook = {
+      ...bookRef.current,
+      bookmarks: (bookRef.current.bookmarks || []).filter(
+        (bm) => bm.id !== bookmarkId,
+      ),
+    };
+    updateBook(updatedBook);
+  };
+
+  useEffect(() => {
+    const container = document.querySelector(".pdf-viewer-container");
+    if (container) {
+      container.style.setProperty(
+        "--reader-font",
+        fontFamily === "inter"
+          ? "'Inter', sans-serif"
+          : fontFamily === "serif"
+            ? "Georgia, serif"
+            : fontFamily === "mono"
+              ? "'JetBrains Mono', monospace"
+              : "-apple-system, sans-serif",
+      );
+    }
+  }, [fontFamily]);
+
   if (missingBookError) {
     return (
       <div className="pdf-viewer-container">
@@ -656,6 +797,33 @@ function PdfViewer() {
             <Maximize size={16} />
           </button>
           <div className="toolbar-divider"></div>
+          <select
+            className="font-select"
+            value={fontFamily}
+            onChange={(e) => setFontFamily(e.target.value)}
+            title="Font"
+          >
+            <option value="inter">Inter</option>
+            <option value="serif">Serif</option>
+            <option value="mono">Mono</option>
+            <option value="system">System</option>
+          </select>
+          <div className="toolbar-divider"></div>
+          <button
+            className="btn btn-icon"
+            onClick={addBookmark}
+            title="Add Bookmark"
+          >
+            <BookmarkPlus size={16} />
+          </button>
+          <button
+            className="btn btn-icon"
+            onClick={() => setShowBookmarks(!showBookmarks)}
+            title="Bookmarks"
+          >
+            <Bookmark size={16} />
+          </button>
+          <div className="toolbar-divider"></div>
           <span className="reading-timer" title="Session reading time">
             <Timer size={13} /> {formatTime(sessionSeconds)}
           </span>
@@ -700,6 +868,46 @@ function PdfViewer() {
           </div>
         )}
       </div>
+      {showBookmarks && (
+        <div className="bookmarks-panel">
+          <div className="bookmarks-panel-header">
+            <h3>Bookmarks</h3>
+            <button
+              className="btn btn-icon"
+              onClick={() => setShowBookmarks(false)}
+            >
+              <X size={18} />
+            </button>
+          </div>
+          <div className="bookmarks-list">
+            {(book?.bookmarks || []).length === 0 ? (
+              <p className="bookmarks-empty">
+                No bookmarks yet. Add one from the toolbar!
+              </p>
+            ) : (
+              (book?.bookmarks || []).map((bm) => (
+                <div key={bm.id} className="bookmark-item">
+                  <div
+                    className="bookmark-info"
+                    onClick={() => jumpToBookmark(bm.page)}
+                  >
+                    <Bookmark size={14} />
+                    <span className="bookmark-label">{bm.label}</span>
+                    <span className="bookmark-page">p.{bm.page}</span>
+                  </div>
+                  <button
+                    className="btn btn-icon btn-icon-sm"
+                    onClick={() => deleteBookmark(bm.id)}
+                    title="Delete"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -709,6 +917,7 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
   const canvasRef = useRef(null);
   const textLayerRef = useRef(null);
   const [isVisible, setIsVisible] = useState(false);
+  const hasRenderedRef = useRef(false);
 
   // Calculate placeholder height based on scale and original dimensions
   const placeholderHeight = dimensions ? dimensions.height * scale : 800;
@@ -719,26 +928,42 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
       ([entry]) => {
         setIsVisible(entry.isIntersecting);
       },
-      { threshold: 0.0, rootMargin: "250px 0px" },
+      { threshold: 0.0, rootMargin: "500px 0px" },
     );
 
     if (itemRef.current) observer.observe(itemRef.current);
     return () => observer.disconnect();
   }, []);
 
+  // When scale changes, reset rendered state so visible pages re-render
+  useEffect(() => {
+    hasRenderedRef.current = false;
+  }, [scale]);
+
   useEffect(() => {
     let canvasTimer;
     let textLayerTimer;
 
     if (isVisible && canvasRef.current) {
+      // Skip rendering if this page was already rendered (cache hit)
+      if (
+        hasRenderedRef.current &&
+        canvasRef.current.width > 1 &&
+        canvasRef.current.height > 1
+      ) {
+        return;
+      }
+
       // Debounce canvas rendering to avoid rendering pages the user just scrolls past quickly
-      canvasTimer = setTimeout(() => {
-        renderPage(pageNum, canvasRef.current, true, null, true);
+      canvasTimer = setTimeout(async () => {
+        if (!canvasRef.current) return;
+        await renderPage(pageNum, canvasRef.current, true, null, true);
+        hasRenderedRef.current = true;
 
         // Render heavy text layer with additional delay
-        textLayerTimer = setTimeout(() => {
-          if (canvasRef.current) {
-            renderPage(
+        textLayerTimer = setTimeout(async () => {
+          if (canvasRef.current && textLayerRef.current) {
+            await renderPage(
               pageNum,
               canvasRef.current,
               true,
@@ -749,14 +974,20 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
         }, 250);
       }, 80);
     } else if (!isVisible && canvasRef.current) {
-      // Immediately clear canvas size and memory when scrolled offscreen
-      const canvas = canvasRef.current;
-      const context = canvas.getContext("2d");
-      if (context) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
+      // Free canvas backing store bitmap and text DOM to conserve RAM/VRAM
+      if (canvasRef.current._renderTask) {
+        try {
+          canvasRef.current._renderTask.cancel();
+        } catch {}
+        canvasRef.current._renderTask = null;
       }
-      canvas.width = 0;
-      canvas.height = 0;
+      if (canvasRef.current.width > 1 || canvasRef.current.height > 1) {
+        canvasRef.current.width = 1;
+        canvasRef.current.height = 1;
+        const ctx = canvasRef.current.getContext("2d");
+        if (ctx) ctx.clearRect(0, 0, 1, 1);
+      }
+      hasRenderedRef.current = false;
       if (textLayerRef.current) {
         textLayerRef.current.innerHTML = "";
       }
@@ -767,6 +998,22 @@ function PdfPageItem({ pageNum, renderPage, scale, dimensions }) {
       if (textLayerTimer) clearTimeout(textLayerTimer);
     };
   }, [isVisible, pageNum, scale, renderPage]);
+
+  // Clean up canvas bitmap on unmount
+  useEffect(() => {
+    return () => {
+      if (canvasRef.current) {
+        if (canvasRef.current._renderTask) {
+          try {
+            canvasRef.current._renderTask.cancel();
+          } catch {}
+          canvasRef.current._renderTask = null;
+        }
+        canvasRef.current.width = 1;
+        canvasRef.current.height = 1;
+      }
+    };
+  }, []);
 
   return (
     <div

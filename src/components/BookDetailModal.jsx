@@ -14,9 +14,11 @@ import {
   Sparkles,
   Trash2,
   RefreshCw,
+  Crop,
 } from "lucide-react";
 import { useLibrary, GENRES } from "../context/LibraryContext";
 import { useToast } from "./Toast";
+import CoverEditorModal from "./CoverEditorModal";
 import "./BookDetailModal.css";
 
 function getBookGradient(title) {
@@ -81,6 +83,7 @@ function BookDetailModal({ book, onClose }) {
   const [isRegeneratingCover, setIsRegeneratingCover] = useState(false);
   const [fetchedMetaCover, setFetchedMetaCover] = useState(null);
   const [isApplyingGoogleCover, setIsApplyingGoogleCover] = useState(false);
+  const [showCoverEditor, setShowCoverEditor] = useState(false);
 
   const handleRefetchMetadata = async () => {
     setIsRefetching(true);
@@ -258,6 +261,8 @@ function BookDetailModal({ book, onClose }) {
             <div className="modal-cover-wrapper">
               <div
                 className={`modal-cover ${hasCover ? "has-cover" : ""}`}
+                onClick={() => setShowCoverEditor(true)}
+                title="Click to edit, crop, or choose another cover"
                 style={
                   !hasCover
                     ? {
@@ -271,13 +276,26 @@ function BookDetailModal({ book, onClose }) {
                 ) : (
                   <span className="modal-initials">{initials || "?"}</span>
                 )}
+                <div className="modal-cover-hover-badge">
+                  <Crop size={18} />
+                  <span>Edit / Crop Cover</span>
+                </div>
               </div>
+
+              <button
+                className="cover-upload-btn primary-cover-btn"
+                onClick={() => setShowCoverEditor(true)}
+                title="Open Cover Studio to crop, rotate, or choose another cover"
+              >
+                <Crop size={14} /> Edit & Crop Cover
+              </button>
+
               <button
                 className="cover-upload-btn"
                 onClick={() => coverInputRef.current?.click()}
                 title="Upload custom cover"
               >
-                <Upload size={14} /> Change Cover
+                <Upload size={14} /> Upload Custom
               </button>
               <button
                 className="cover-upload-btn"
@@ -584,6 +602,16 @@ function BookDetailModal({ book, onClose }) {
           </div>
         </div>
       </div>
+      {showCoverEditor && (
+        <CoverEditorModal
+          book={book}
+          onClose={() => setShowCoverEditor(false)}
+          onSave={async (newCover) => {
+            await updateBook({ ...book, cover: newCover });
+            addToast("Cover updated! 🎨", "success");
+          }}
+        />
+      )}
     </div>,
     document.body,
   );

@@ -169,9 +169,11 @@ function BookCard({
   useEffect(() => {
     if (showMenu && menuBtnRef.current) {
       const rect = menuBtnRef.current.getBoundingClientRect();
+      const fitsAbove = rect.top > 260;
       setMenuPos({
-        bottom: window.innerHeight - rect.top + 8,
-        right: window.innerWidth - rect.right,
+        bottom: fitsAbove ? window.innerHeight - rect.top + 8 : undefined,
+        top: fitsAbove ? undefined : rect.bottom + 8,
+        right: Math.max(10, window.innerWidth - rect.right),
       });
     }
   }, [showMenu]);
@@ -398,21 +400,15 @@ function BookCard({
     );
   }
 
-  // === GRID VIEW (default) ===
+  // === GRID VIEW (default: Cover-only with hover overlay) ===
   return (
     <>
-      <div className="card book-card">
-        <div
-          className={`book-cover ${hasCover ? "has-cover" : ""}`}
-          style={
-            !hasCover
-              ? {
-                  background: `linear-gradient(145deg, ${color1}22, ${color2}11)`,
-                }
-              : undefined
-          }
-          onClick={handleCardClick}
-        >
+      <div
+        className={`card book-card ${showMenu ? "menu-open" : ""} ${isEditing ? "is-editing" : ""}`}
+        onClick={handleCardClick}
+      >
+        {/* Full Cover Container */}
+        <div className={`book-card-cover ${hasCover ? "has-cover" : ""}`}>
           {hasCover ? (
             <img
               src={book.cover}
@@ -422,48 +418,63 @@ function BookCard({
             />
           ) : (
             <div
-              className="book-cover-art"
+              className="book-cover-art full-cover-art"
               style={{
-                background: `linear-gradient(135deg, ${color1}, ${color2})`,
+                background: `linear-gradient(145deg, ${color1}, ${color2})`,
               }}
             >
-              <span className="book-initials">{initials || "?"}</span>
+              <div className="book-spine-line" />
+              <div className="cover-art-content">
+                <span className="book-initials-badge">{initials || "?"}</span>
+                <h4 className="cover-art-title">{book.title}</h4>
+                <p className="cover-art-author">{book.author}</p>
+              </div>
+              <div className="cover-art-footer">
+                <span className="cover-art-genre">{book.genre || "Book"}</span>
+              </div>
             </div>
           )}
-          <div className="category-badge">
-            <span className={`badge badge-${book.category.toLowerCase()}`}>
-              {book.category}
-            </span>
-            {book.fileMissing && (
-              <span
-                className="badge badge-missing"
+
+          {/* Realistic spine highlight/shadow */}
+          <div className="book-spine-shadow" />
+
+          {/* Unhovered badges & slim progress bar */}
+          {book.progress > 0 && (
+            <div className="card-bottom-progress">
+              <div
+                className="card-bottom-progress-fill"
                 style={{
-                  background: "#ef4444",
-                  color: "#fff",
-                  marginLeft: "0.35rem",
+                  width: `${progressPercent}%`,
+                  background: `linear-gradient(90deg, ${color1}, ${color2})`,
                 }}
-              >
-                Missing File
-              </span>
-            )}
-          </div>
-          <button
-            className={`favorite-btn ${book.isFavorite ? "active" : ""}`}
-            onClick={toggleFavorite}
-            title={
-              book.isFavorite ? "Remove from Favorites" : "Add to Favorites"
-            }
-          >
-            <Star
-              size={18}
-              fill={book.isFavorite ? "var(--accent-primary)" : "none"}
-            />
-          </button>
+              />
+            </div>
+          )}
+
+          {book.fileMissing && (
+            <div className="card-missing-badge">Missing File</div>
+          )}
+
+          {book.isFavorite && (
+            <div className="card-favorite-indicator" title="Favorited">
+              <Star size={13} fill="var(--accent-primary)" color="var(--accent-primary)" />
+            </div>
+          )}
         </div>
 
-        <div className="book-info">
+        {/* Hover Overlay with Action Buttons */}
+        <div
+          className="book-card-overlay"
+          onClick={(e) => {
+            if (isEditing) e.stopPropagation();
+          }}
+        >
           {isEditing ? (
-            <div className="inline-edit">
+            <div
+              className="inline-edit-overlay"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <h4 className="inline-edit-heading">Edit Details</h4>
               <input
                 ref={editTitleRef}
                 value={editTitle}
@@ -507,108 +518,166 @@ function BookCard({
             </div>
           ) : (
             <>
-              <h3 className="book-title" title={book.title}>
-                {book.title}
-              </h3>
-              <p className="book-author">{book.author}</p>
+              {/* Top Row: Category badge & Favorite Star */}
+              <div className="overlay-top">
+                <div className="overlay-badges">
+                  <span className={`badge badge-${book.category.toLowerCase()}`}>
+                    {book.category}
+                  </span>
+                  {book.fileMissing && (
+                    <span
+                      className="badge badge-missing"
+                      style={{
+                        background: "#ef4444",
+                        color: "#fff",
+                      }}
+                    >
+                      Missing File
+                    </span>
+                  )}
+                </div>
+
+                <button
+                  className={`favorite-btn ${book.isFavorite ? "active" : ""}`}
+                  onClick={toggleFavorite}
+                  title={
+                    book.isFavorite ? "Remove from Favorites" : "Add to Favorites"
+                  }
+                >
+                  <Star
+                    size={16}
+                    fill={book.isFavorite ? "var(--accent-primary)" : "none"}
+                  />
+                </button>
+              </div>
+
+              {/* Bottom Section: Title, Author, Progress, Action Buttons */}
+              <div className="overlay-bottom">
+                <div className="overlay-info">
+                  <h3 className="overlay-title" title={book.title}>
+                    {book.title}
+                  </h3>
+                  <p className="overlay-author">{book.author}</p>
+
+                  {progressPercent > 0 && (
+                    <div className="overlay-progress-container">
+                      <div className="progress-bg">
+                        <div
+                          className="progress-fill"
+                          style={{
+                            width: `${progressPercent}%`,
+                            background: `linear-gradient(90deg, ${color1}, ${color2})`,
+                          }}
+                        />
+                      </div>
+                      <span className="overlay-progress-text">
+                        {Math.round(progressPercent)}%
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Visible on hover: Read Now & + buttons */}
+                <div className="overlay-actions">
+                  <button
+                    className="btn btn-primary overlay-read-btn"
+                    onClick={handleRead}
+                  >
+                    <Play size={14} fill="currentColor" /> Read Now
+                  </button>
+
+                  <div className="dropdown">
+                    <button
+                      ref={menuBtnRef}
+                      className="btn-icon-sm overlay-menu-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setShowMenu(!showMenu);
+                      }}
+                      title="More options"
+                    >
+                      {showMenu ? <X size={16} /> : <Plus size={16} />}
+                    </button>
+
+                    {showMenu &&
+                      createPortal(
+                        <div
+                          ref={menuRef}
+                          className="dropdown-menu"
+                          onClick={(e) => e.stopPropagation()}
+                          style={{
+                            position: "fixed",
+                            ...(menuPos.bottom !== undefined
+                              ? { bottom: `${menuPos.bottom}px` }
+                              : {}),
+                            ...(menuPos.top !== undefined
+                              ? { top: `${menuPos.top}px` }
+                              : {}),
+                            right: `${menuPos.right}px`,
+                            zIndex: 9999,
+                          }}
+                        >
+                          <div className="dropdown-header">Move to...</div>
+                          {["Planned", "Reading", "Completed"].map((cat) => (
+                            <button
+                              key={cat}
+                              className={`dropdown-item ${book.category === cat ? "active" : ""}`}
+                              onClick={() => changeCategory(cat)}
+                            >
+                              {book.category === cat && <Check size={14} />}
+                              {cat}
+                            </button>
+                          ))}
+
+                          <div className="dropdown-divider"></div>
+                          <div className="dropdown-header">Genre</div>
+                          <div className="genre-grid">
+                            {GENRES.map((g) => (
+                              <button
+                                key={g}
+                                className={`genre-item ${book.genre === g ? "active" : ""}`}
+                                onClick={() => changeGenre(g)}
+                                title={g}
+                              >
+                                {g}
+                              </button>
+                            ))}
+                          </div>
+
+                          <div className="dropdown-divider"></div>
+                          <button
+                            className="dropdown-item"
+                            onClick={toggleFavorite}
+                          >
+                            <Star
+                              size={14}
+                              fill={book.isFavorite ? "currentColor" : "none"}
+                            />
+                            {book.isFavorite
+                              ? "Remove Favorite"
+                              : "Mark as Favorite"}
+                          </button>
+                          <button
+                            className="dropdown-item"
+                            onClick={handleEdit}
+                          >
+                            <Pencil size={14} /> Edit Details
+                          </button>
+                          <button
+                            className={`dropdown-item dropdown-item-danger ${confirmDelete ? "confirm" : ""}`}
+                            onClick={handleDelete}
+                          >
+                            <Trash2 size={14} />{" "}
+                            {confirmDelete ? "Confirm Delete?" : "Delete"}
+                          </button>
+                        </div>,
+                        document.body,
+                      )}
+                  </div>
+                </div>
+              </div>
             </>
           )}
-
-          <div className="progress-container">
-            <div className="progress-header">
-              <span>Progress</span>
-              <span className="progress-value">
-                {Math.round(progressPercent)}%
-              </span>
-            </div>
-            <div className="progress-bg">
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${progressPercent}%`,
-                  background: `linear-gradient(90deg, ${color1}, ${color2})`,
-                }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="book-actions">
-            <button className="btn btn-primary flex-1" onClick={handleRead}>
-              <Play size={14} fill="currentColor" /> Read
-            </button>
-
-            <div>
-              <button
-                ref={menuBtnRef}
-                className="btn-icon-sm"
-                onClick={() => setShowMenu(!showMenu)}
-                title="More options"
-              >
-                {showMenu ? <X size={16} /> : <Plus size={16} />}
-              </button>
-
-              {showMenu &&
-                createPortal(
-                  <div
-                    ref={menuRef}
-                    className="dropdown-menu"
-                    style={{
-                      position: "fixed",
-                      bottom: `${menuPos.bottom}px`,
-                      right: `${menuPos.right}px`,
-                      zIndex: 9999,
-                    }}
-                  >
-                    <div className="dropdown-header">Move to...</div>
-                    {["Planned", "Reading", "Completed"].map((cat) => (
-                      <button
-                        key={cat}
-                        className={`dropdown-item ${book.category === cat ? "active" : ""}`}
-                        onClick={() => changeCategory(cat)}
-                      >
-                        {book.category === cat && <Check size={14} />}
-                        {cat}
-                      </button>
-                    ))}
-
-                    <div className="dropdown-divider"></div>
-                    <div className="dropdown-header">Genre</div>
-                    <div className="genre-grid">
-                      {GENRES.map((g) => (
-                        <button
-                          key={g}
-                          className={`genre-item ${book.genre === g ? "active" : ""}`}
-                          onClick={() => changeGenre(g)}
-                          title={g}
-                        >
-                          {g}
-                        </button>
-                      ))}
-                    </div>
-
-                    <div className="dropdown-divider"></div>
-                    <button className="dropdown-item" onClick={toggleFavorite}>
-                      <Star
-                        size={14}
-                        fill={book.isFavorite ? "currentColor" : "none"}
-                      />
-                      {book.isFavorite ? "Remove Favorite" : "Mark as Favorite"}
-                    </button>
-                    <button className="dropdown-item" onClick={handleEdit}>
-                      <Pencil size={14} /> Edit Details
-                    </button>
-                    <button
-                      className={`dropdown-item dropdown-item-danger ${confirmDelete ? "confirm" : ""}`}
-                      onClick={handleDelete}
-                    >
-                      <Trash2 size={14} />{" "}
-                      {confirmDelete ? "Confirm Delete?" : "Delete"}
-                    </button>
-                  </div>,
-                  document.body,
-                )}
-            </div>
-          </div>
         </div>
       </div>
       {showModal && (

@@ -1,207 +1,429 @@
 .book-card {
+  position: relative;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  aspect-ratio: 2 / 3;
   padding: 0;
-  overflow: visible;
-  height: 100%;
-  cursor: default;
-  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background: var(--bg-secondary);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.35s ease, border-color 0.25s ease;
 }
 
 .book-card:hover {
   transform: translateY(-6px) scale(1.02);
-  box-shadow: 0 16px 32px rgba(0,0,0,0.4);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(99, 102, 241, 0.18);
+  border-color: rgba(99, 102, 241, 0.4);
 }
 
-.book-cover {
-  height: 170px;
+/* Full Cover Container */
+.book-card-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
-  border-bottom: 1px solid var(--glass-border);
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
-  cursor: pointer;
   overflow: hidden;
-  perspective: 1000px;
-}
-
-.book-cover.has-cover {
   background: var(--bg-primary);
 }
 
-.book-cover:hover .book-cover-img {
-  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
-  box-shadow: 10px 10px 20px rgba(0,0,0,0.3);
-}
-
-.book-cover:hover .book-cover-art {
-  transform: rotateY(-10deg) rotateX(5deg) scale(1.05);
-  box-shadow: 10px 10px 25px rgba(0,0,0,0.4);
-}
-
-
-.book-cover-img {
+.book-card-cover .book-cover-img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  transform-style: preserve-3d;
+  display: block;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-.book-cover-art {
-  width: 80%;
-  height: 85%;
-  background: var(--gradient-accent);
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  padding: 1.25rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border-left: 3px solid rgba(255, 255, 255, 0.1);
-  transform-style: preserve-3d;
+.book-card:hover .book-cover-img {
+  transform: scale(1.05);
 }
 
-.book-initials {
-  color: white;
-  font-family: 'Outfit', sans-serif;
-  font-weight: 700;
-  font-size: 1.3rem;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  letter-spacing: 0.05em;
-}
-
-.category-badge {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-}
-
-.book-info {
-  padding: 1rem 1.15rem 1.15rem;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-}
-
-.book-title {
-  font-size: 0.95rem;
-  margin-bottom: 0.15rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  font-weight: 600;
-}
-
-.book-author {
-  color: var(--text-secondary);
-  font-size: 0.8rem;
-  margin-bottom: 1rem;
-  opacity: 0.8;
-}
-
-.progress-container {
-  margin-top: auto;
-  margin-bottom: 1rem;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.72rem;
-  color: var(--text-secondary);
-  margin-bottom: 0.4rem;
-  font-weight: 500;
-}
-
-.progress-value {
-  font-family: 'Outfit', sans-serif;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-
-.book-actions {
-  display: flex;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.flex-1 {
-  flex: 1;
-}
-
-.btn-icon-sm {
-  width: 34px;
-  height: 34px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--glass-border);
-  background: transparent;
-  color: var(--text-secondary);
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.btn-icon-sm:hover {
-  border-color: var(--accent-primary);
-  color: var(--accent-primary);
-  background: rgba(99, 102, 241, 0.06);
-}
-
-.btn-danger-icon {
-  border-color: var(--danger) !important;
-  color: var(--danger) !important;
-  background: rgba(239, 68, 68, 0.08) !important;
-  animation: pulse-danger 0.6s ease;
-}
-
-@keyframes pulse-danger {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.08); }
-}
-
-/* Inline Edit Styles */
-.book-card .book-info {
-  position: relative;
-}
-
-.book-card .inline-edit {
+/* Tactile book spine highlight/shadow on left edge */
+.book-spine-shadow {
   position: absolute;
   top: 0;
   left: 0;
-  right: 0;
   bottom: 0;
-  background: var(--bg-secondary);
-  padding: 0.75rem 1.15rem;
-  z-index: 15;
+  width: 14px;
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.35) 0%, rgba(255, 255, 255, 0.08) 30%, rgba(0, 0, 0, 0.15) 70%, transparent 100%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Fallback cover art (when book has no cover image) */
+.full-cover-art {
+  width: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  justify-content: space-between;
+  padding: 1.25rem 1rem;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.book-spine-line {
+  position: absolute;
+  top: 0;
+  left: 12px;
+  bottom: 0;
+  width: 2px;
+  background: rgba(255, 255, 255, 0.18);
+  box-shadow: 1px 0 3px rgba(0, 0, 0, 0.3);
+}
+
+.cover-art-content {
+  margin-top: 1.25rem;
+  padding-left: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.book-initials-badge {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  border-radius: 0 0 var(--radius-md) var(--radius-md);
-  border-top: 1px solid var(--glass-border);
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  font-family: 'Outfit', sans-serif;
+  font-weight: 800;
+  font-size: 1.25rem;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.35rem;
 }
 
-.book-card .inline-edit .edit-input {
-  padding: 0.35rem 0.5rem;
+.cover-art-title {
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.cover-art-author {
+  color: rgba(255, 255, 255, 0.82);
   font-size: 0.8rem;
+  font-weight: 500;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-.book-card .inline-edit .edit-actions {
-  margin-top: 0.1rem;
+.cover-art-footer {
+  padding-left: 0.6rem;
+  margin-bottom: 0.25rem;
+}
+
+.cover-art-genre {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.25rem 0.55rem;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Unhovered badges & progress */
+.card-bottom-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.4);
+  z-index: 3;
+}
+
+.card-bottom-progress-fill {
+  height: 100%;
+  border-radius: 0 2px 2px 0;
+}
+
+.card-missing-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: #ef4444;
+  color: #fff;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 600;
+  border-radius: var(--radius-sm);
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+}
+
+.card-favorite-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(10, 15, 29, 0.8);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  transition: opacity 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.book-card:hover .card-favorite-indicator {
+  opacity: 0;
+}
+
+/* Hover Overlay */
+.book-card-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.9rem;
+  background: linear-gradient(
+    180deg,
+    rgba(8, 12, 22, 0.88) 0%,
+    rgba(8, 12, 22, 0.35) 30%,
+    rgba(8, 12, 22, 0.88) 65%,
+    rgba(8, 12, 22, 0.98) 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.book-card:hover .book-card-overlay,
+.book-card.menu-open .book-card-overlay,
+.book-card.is-editing .book-card-overlay {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Overlay Top */
+.overlay-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  transform: translateY(-6px);
+  transition: transform 0.25s ease;
+}
+
+.book-card:hover .overlay-top,
+.book-card.menu-open .overlay-top,
+.book-card.is-editing .overlay-top {
+  transform: translateY(0);
+}
+
+.overlay-badges {
+  display: flex;
+  align-items: center;
   gap: 0.35rem;
+  flex-wrap: wrap;
 }
 
-.book-card .inline-edit .edit-actions .btn-sm {
-  padding: 0.25rem 0.5rem !important;
-  font-size: 0.7rem !important;
+/* Favorite Button in Overlay */
+.book-card .favorite-btn {
+  position: static;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 1;
+  transform: none;
+  flex-shrink: 0;
+}
+
+.book-card .favorite-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  color: var(--accent-primary);
+  transform: scale(1.1) !important;
+}
+
+.book-card .favorite-btn.active {
+  color: var(--accent-primary);
+  background: rgba(251, 192, 45, 0.2);
+  border-color: rgba(251, 192, 45, 0.4);
+}
+
+/* Overlay Bottom */
+.overlay-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  transform: translateY(6px);
+  transition: transform 0.25s ease;
+}
+
+.book-card:hover .overlay-bottom,
+.book-card.menu-open .overlay-bottom,
+.book-card.is-editing .overlay-bottom {
+  transform: translateY(0);
+}
+
+.overlay-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.overlay-title {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.overlay-author {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  opacity: 0.92;
+}
+
+.overlay-progress-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.overlay-progress-container .progress-bg {
   flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.16);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.overlay-progress-container .progress-fill {
+  height: 100%;
+  border-radius: 2px;
+}
+
+.overlay-progress-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  font-family: 'Outfit', sans-serif;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* Overlay Action Buttons */
+.overlay-actions {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.overlay-read-btn {
+  flex: 1;
+  padding: 0.48rem 0.75rem !important;
+  font-size: 0.82rem !important;
+  font-weight: 600 !important;
+  border-radius: var(--radius-sm) !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
+  transition: all 0.2s ease;
+}
+
+.overlay-read-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(99, 102, 241, 0.55);
+}
+
+.overlay-menu-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.overlay-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--accent-primary);
+  color: var(--accent-primary);
+}
+
+/* Inline Edit Overlay */
+.inline-edit-overlay {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  justify-content: center;
+  height: 100%;
+  background: rgba(13, 17, 28, 0.96);
+  padding: 0.9rem;
+  border-radius: var(--radius-sm);
+  backdrop-filter: blur(14px);
+}
+
+.inline-edit-heading {
+  font-size: 0.85rem;
+  font-weight: 700;
+  margin: 0 0 0.2rem 0;
+  color: var(--text-primary);
 }
 
 .inline-edit {

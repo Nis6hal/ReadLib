@@ -45,8 +45,14 @@ export function LibraryProvider({ children }) {
   const [isSyncEnabled, setIsSyncEnabled] = useState(false);
   const [lastSynced, setLastSynced] = useState(null);
 
-  // Ref to always have latest syncWithCloud without stale closure in interval
+  const [autoTheme, setAutoTheme] = useState(false);
+  const [autoThemeLightUntil, setAutoThemeLightUntil] = useState(18);
+  const [autoThemeDarkUntil, setAutoThemeDarkUntil] = useState(6);
+
+  // Refs to avoid stale closures in intervals
   const syncWithCloudRef = useRef(null);
+  const themeRef = useRef(theme);
+  const toggleThemeRef = useRef(null);
 
   // Load initial data
   useEffect(() => {
@@ -94,6 +100,21 @@ export function LibraryProvider({ children }) {
         const storedLastSynced = await getSetting("lastSynced");
         if (storedLastSynced) {
           setLastSynced(storedLastSynced);
+        }
+
+        const storedAutoTheme = await getSetting("autoTheme");
+        if (storedAutoTheme !== undefined) {
+          setAutoTheme(storedAutoTheme);
+        }
+        const storedAutoThemeLightUntil = await getSetting(
+          "autoThemeLightUntil",
+        );
+        if (storedAutoThemeLightUntil !== undefined) {
+          setAutoThemeLightUntil(storedAutoThemeLightUntil);
+        }
+        const storedAutoThemeDarkUntil = await getSetting("autoThemeDarkUntil");
+        if (storedAutoThemeDarkUntil !== undefined) {
+          setAutoThemeDarkUntil(storedAutoThemeDarkUntil);
         }
       } catch (err) {
         console.error("Error loading data", err);
@@ -648,11 +669,29 @@ export function LibraryProvider({ children }) {
         }
       }
 
-      // After extracting local metadata, fetch external metadata only for new books
-      // (books without description/cover that also have no publisher, indicating truly un-enriched)
+      // 1. Generate scanned cover thumbnail FIRST as default
+      if (!updatedBook.cover && book.fileHandle) {
+        try {
+          const isEpub = book.id.toLowerCase().endsWith(".epub");
+          const scannedCover = isEpub
+            ? await generateEpubThumbnail(book.fileHandle)
+            : await generateThumbnail(book.fileHandle);
+
+          if (scannedCover) {
+            updatedBook.cover = scannedCover;
+            updatedBook.scannedCover = scannedCover;
+            needsUpdate = true;
+          }
+        } catch (err) {
+          console.warn(`Failed to generate scanned cover for ${book.id}:`, err);
+        }
+      }
+
+      // 2. Fetch external metadata (description, publisher, etc.)
+      // Save Google Books cover in googleCover, but DO NOT overwrite the default scanned cover!
       if (
         book.fileHandle &&
-        (!updatedBook.description || !updatedBook.cover) &&
+        (!updatedBook.description || !updatedBook.publisher) &&
         (book.author === "Unknown Author" || !book.publisher)
       ) {
         try {
@@ -663,8 +702,13 @@ export function LibraryProvider({ children }) {
           if (external) {
             if (!updatedBook.description && external.description)
               updatedBook.description = external.description;
-            if (!updatedBook.cover && external.cover)
-              updatedBook.cover = external.cover;
+            if (external.cover) {
+              updatedBook.googleCover = external.cover;
+              // Fallback to Google cover only if file has no scanned cover
+              if (!updatedBook.cover) {
+                updatedBook.cover = external.cover;
+              }
+            }
             if (!updatedBook.publisher && external.publisher)
               updatedBook.publisher = external.publisher;
             if (!updatedBook.publishedDate && external.publishedDate)
@@ -677,23 +721,6 @@ export function LibraryProvider({ children }) {
           }
         } catch (e) {
           console.warn("External metadata fetch failed", e);
-        }
-      }
-
-      // Generate cover thumbnail if missing
-      if (!book.cover && book.fileHandle) {
-        try {
-          const isEpub = book.id.toLowerCase().endsWith(".epub");
-          const cover = isEpub
-            ? await generateEpubThumbnail(book.fileHandle)
-            : await generateThumbnail(book.fileHandle);
-
-          if (cover) {
-            updatedBook.cover = cover;
-            needsUpdate = true;
-          }
-        } catch (err) {
-          console.warn(`Failed to generate cover for ${book.id}:`, err);
         }
       }
 
@@ -714,16 +741,21 @@ export function LibraryProvider({ children }) {
     void triggerAutoSync();
   };
 
-  const regenerateCoverFromFile = async (book) => {
+  const regenerateCoverFromFile = async (book, pageNum = 1) => {
     if (!book || !book.fileHandle) return null;
     try {
       const isEpub = book.id.toLowerCase().endsWith(".epub");
       const cover = isEpub
         ? await generateEpubThumbnail(book.fileHandle)
-        : await generateThumbnail(book.fileHandle);
+        : await generateThumbnail(book.fileHandle, 600, pageNum);
 
       if (cover) {
-        const updatedBook = { ...book, cover };
+        const updatedBook = {
+          ...book,
+          cover,
+          scannedCover: cover,
+          coverPage: isEpub ? 1 : pageNum,
+        };
         await updateBook(updatedBook);
         return cover;
       }
@@ -784,6 +816,90 @@ export function LibraryProvider({ children }) {
     void triggerAutoSync();
   };
 
+  const backupData = async () => {
+    try {
+      const allBooks = await getAllBooks();
+      const theme = await getSetting("theme");
+      const userName = await getSetting("userName");
+      const readingHistory = await getSetting("readingHistory");
+      const yearlyGoal = await getSetting("yearlyGoal");
+      const collections = await getSetting("collections");
+      const syncKey = await getSetting("syncKey");
+      const isSyncEnabled = await getSetting("isSyncEnabled");
+      const backup = {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        books: allBooks,
+        settings: {
+          theme,
+          userName,
+          readingHistory,
+          yearlyGoal,
+          collections,
+          syncKey,
+          isSyncEnabled,
+        },
+      };
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const date = new Date().toISOString().split("T")[0];
+      a.download = `ReadLib-backup-${date}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Backup failed:", err);
+    }
+  };
+
+  const restoreData = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".json";
+    input.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const data = JSON.parse(text);
+        if (!data.version || !data.books) {
+          alert("Invalid backup file");
+          return;
+        }
+        for (const book of data.books) {
+          await saveBook(book);
+        }
+        if (data.settings) {
+          for (const [key, value] of Object.entries(data.settings)) {
+            if (value !== undefined) {
+              await setSetting(key, value);
+            }
+          }
+        }
+        window.location.reload();
+      } catch (err) {
+        console.error("Restore failed:", err);
+        alert("Failed to restore backup. Check the file and try again.");
+      }
+    };
+    input.click();
+  };
+
+  const updateAutoTheme = async (val) => {
+    setAutoTheme(val);
+    await setSetting("autoTheme", val);
+  };
+
+  const updateAutoThemeSchedule = async (darkUntil, lightUntil) => {
+    setAutoThemeDarkUntil(darkUntil);
+    setAutoThemeLightUntil(lightUntil);
+    await setSetting("autoThemeDarkUntil", darkUntil);
+    await setSetting("autoThemeLightUntil", lightUntil);
+  };
+
   const addManualBook = async (bookData) => {
     let metadata = null;
     try {
@@ -818,10 +934,16 @@ export function LibraryProvider({ children }) {
     return newBook;
   };
 
-  // Keep syncWithCloud ref up to date to avoid stale closures
+  // Keep refs up to date to avoid stale closures
   useEffect(() => {
     syncWithCloudRef.current = syncWithCloud;
   }, [syncWithCloud]);
+  useEffect(() => {
+    themeRef.current = theme;
+  }, [theme]);
+  useEffect(() => {
+    toggleThemeRef.current = toggleTheme;
+  }, [toggleTheme]);
 
   // Auto-sync interval (every 5 minutes) if enabled
   useEffect(() => {
@@ -835,6 +957,22 @@ export function LibraryProvider({ children }) {
       return () => clearInterval(interval);
     }
   }, [isSyncEnabled, syncKey]);
+
+  // Auto-theme effect - check every minute if autoTheme is enabled
+  useEffect(() => {
+    if (!autoTheme) return;
+    const checkTheme = () => {
+      const hour = new Date().getHours();
+      const isDark = hour >= autoThemeDarkUntil || hour < autoThemeLightUntil;
+      const desiredTheme = isDark ? "dark" : "light";
+      if (themeRef.current !== desiredTheme) {
+        toggleThemeRef.current();
+      }
+    };
+    checkTheme();
+    const interval = setInterval(checkTheme, 60000);
+    return () => clearInterval(interval);
+  }, [autoTheme, autoThemeDarkUntil, autoThemeLightUntil]);
 
   return (
     <LibraryContext.Provider
@@ -869,6 +1007,13 @@ export function LibraryProvider({ children }) {
         enableCloudSync,
         disableCloudSync,
         importSyncKey,
+        autoTheme,
+        autoThemeLightUntil,
+        autoThemeDarkUntil,
+        backupData,
+        restoreData,
+        updateAutoTheme,
+        updateAutoThemeSchedule,
       }}
     >
       {children}
