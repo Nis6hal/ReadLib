@@ -36,7 +36,7 @@ A modern, local-first book & PDF management app. Organize your reading library, 
 - **IndexedDB** (via [`idb`](https://github.com/nicedayfor/idb)) — Persistent local storage
 - **Lucide React** — Icon library
 - **Vanilla CSS** — Custom design system with glassmorphism, animations, and dark/light theming
-- **Vercel** — Deployment target (optional)
+- **Vercel** — Deployment target (optional) 
 
 ---
 
